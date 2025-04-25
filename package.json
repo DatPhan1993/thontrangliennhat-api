@@ -1,14 +1,11 @@
 {
   "name": "thontrangliennhat-api",
   "version": "1.0.0",
-  "private": true,
-  "engines": {
-    "node": "18.x"
-  },
+  "description": "API cho website Thôn Trang Liên Nhất",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'No build step required'",
-    "vercel-build": "echo 'No build step required'"
+    "dev": "nodemon server.js"
   },
   "keywords": [
     "api",
@@ -20,8 +17,12 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "lowdb": "^1.0.0"
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
