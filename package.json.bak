@@ -1,0 +1,26 @@
+{
+  "name": "phunongbuondon-api",
+  "version": "1.0.0",
+  "description": "API server for Phú Nông Liên Nhật website",
+  "main": "server-express.js",
+  "scripts": {
+    "start-json": "json-server --watch database.json --port 3001 --routes routes.json --middlewares db-middlewares.js",
+    "start": "node server-express.js",
+    "dev": "nodemon server-express.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "api",
+    "nodejs",
+    "express",
+    "json-server"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "json-server": "^0.17.4",
+    "nodemon": "^3.0.1"
+  }
+}

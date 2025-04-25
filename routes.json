@@ -1,0 +1,14 @@
+{
+  "/api/parent-navs/all-with-child": "/navigation",
+  "/api/navigation-links": "/navigation",
+  "/api/parent-navs": "/navigation",
+  "/api/child-navs": "/navigation",
+  "/api/users": "/users",
+  "/api/products": "/products",
+  "/api/services": "/services",
+  "/api/experiences": "/experiences",
+  "/api/news": "/news",
+  "/api/team": "/team",
+  "/api/categories": "/categories",
+  "/api/*": "/$1"
+} 
