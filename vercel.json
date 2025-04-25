@@ -14,7 +14,17 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "PORT": "3001",
-    "DOMAIN": "api.thontrangliennhat.com"
-  }
+    "PORT": "3001"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://thontrangliennhat.com"
+        }
+      ]
+    }
+  ]
 } 
