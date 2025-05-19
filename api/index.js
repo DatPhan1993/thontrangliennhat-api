@@ -3,19 +3,22 @@ const express = require('express');
 const cors = require('cors');
 const router = express.Router();
 
-// Enable CORS
+// Enable CORS with specific origin
 router.use(cors({
-  origin: '*',
+  origin: 'https://thontrangliennhat.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: '*'
+  allowedHeaders: 'X-Requested-With, Content-Type, Accept',
+  credentials: true
 }));
 
 // Add CORS headers to all responses
 router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', 'https://thontrangliennhat.com');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -220,7 +223,25 @@ const mockData = {
         parentId: 4
       }
     ]
-  }
+  },
+  images: [
+    {
+      id: 1,
+      name: "Banner chính",
+      alt: "Banner chính thôn Trang Liên Nhất",
+      url: "https://images/uploads/174706388430-76937121.jpg",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: "Sản phẩm HTX",
+      alt: "Sản phẩm HTX thôn Trang Liên Nhất",
+      url: "https://images/uploads/17473971405-1962764.jpg",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ]
 };
 
 // API endpoints handler with appropriate response format
@@ -245,7 +266,8 @@ router.get('/', (req, res) => {
       '/api/parent-navs/all-with-child',
       '/api/parent-navs/slug/:slug',
       '/api/experiences',
-      '/api/news'
+      '/api/news',
+      '/api/images'
     ]
   });
 });
@@ -291,6 +313,29 @@ router.get('/parent-navs/slug/:slug', (req, res) => {
   } else {
     // Return empty array if no categories found
     handleApiResponse(res, []);
+  }
+});
+
+// Images endpoint
+router.get('/images', (req, res) => {
+  console.log('GET /api/images - Serving image data');
+  handleApiResponse(res, mockData.images);
+});
+
+// Image by ID endpoint
+router.get('/images/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(`GET /api/images/${id} - Serving specific image data`);
+  
+  const image = mockData.images.find(img => img.id === id);
+  if (image) {
+    handleApiResponse(res, image);
+  } else {
+    res.status(404).json({
+      statusCode: 404,
+      message: 'Image not found',
+      data: null
+    });
   }
 });
 

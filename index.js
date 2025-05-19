@@ -3,19 +3,22 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// Enable CORS
+// Enable CORS with specific origin
 app.use(cors({
-  origin: '*',
+  origin: 'https://thontrangliennhat.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: '*'
+  allowedHeaders: 'X-Requested-With, Content-Type, Accept',
+  credentials: true
 }));
 
 // Add CORS headers to all responses
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', 'https://thontrangliennhat.com');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -38,7 +41,8 @@ app.get('/', (req, res) => {
       '/api/products',
       '/api/services',
       '/api/teams',
-      '/api/parent-navs'
+      '/api/parent-navs',
+      '/api/images'
     ],
     time: new Date().toISOString()
   });
