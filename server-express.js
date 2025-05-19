@@ -302,33 +302,83 @@ const writeDatabase = (db) => {
 
 // API endpoint cho navigation
 app.get('/api/parent-navs/all-with-child', (req, res) => {
-  const db = getDatabase();
-  res.json({
-    statusCode: 200,
-    message: 'Success',
-    data: db.navigation
-  });
+  try {
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      return res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: db.navigation
+    });
+  } catch (error) {
+    console.error('Error fetching navigation:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching navigation: ' + error.message,
+      data: []
+    });
+  }
 });
 
 app.get('/api/navigation-links', (req, res) => {
-  const db = getDatabase();
-  res.json(db.navigation);
+  try {
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      return res.json([]);
+    }
+    
+    res.json(db.navigation);
+  } catch (error) {
+    console.error('Error fetching navigation links:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching navigation links: ' + error.message,
+      data: []
+    });
+  }
 });
 
 app.get('/api/parent-navs', (req, res) => {
-  const db = getDatabase();
-  const parentNavs = db.navigation.map(item => ({
-    id: item.id,
-    title: item.title,
-    slug: item.slug,
-    position: item.position
-  }));
-  
-  res.json({
-    statusCode: 200,
-    message: 'Success',
-    data: parentNavs
-  });
+  try {
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      return res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+    
+    const parentNavs = db.navigation.map(item => ({
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      position: item.position
+    }));
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: parentNavs
+    });
+  } catch (error) {
+    console.error('Error fetching parent navs:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching parent navs: ' + error.message,
+      data: []
+    });
+  }
 });
 
 // Endpoint for fetching categories by parent nav slug
@@ -352,21 +402,41 @@ app.get('/api/parent-navs/slug/:slug', (req, res) => {
 });
 
 app.get('/api/child-navs', (req, res) => {
-  const db = getDatabase();
-  let allChildren = [];
-  
-  db.navigation.forEach(parent => {
-    allChildren = [...allChildren, ...parent.children.map(child => ({
-      ...child,
-      parentId: parent.id
-    }))];
-  });
-  
-  res.json({
-    statusCode: 200,
-    message: 'Success',
-    data: allChildren
-  });
+  try {
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      return res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+    
+    let allChildren = [];
+    
+    db.navigation.forEach(parent => {
+      if (parent.children && Array.isArray(parent.children)) {
+        allChildren = [...allChildren, ...parent.children.map(child => ({
+          ...child,
+          parentId: parent.id
+        }))];
+      }
+    });
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: allChildren
+    });
+  } catch (error) {
+    console.error('Error fetching child navs:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching child navs: ' + error.message,
+      data: []
+    });
+  }
 });
 
 // GET endpoint for individual parent navigation item
@@ -457,12 +527,31 @@ app.get('/api/users', (req, res) => {
 
 // API endpoint cho products
 app.get('/api/products', (req, res) => {
-  console.log('GET /api/products - Getting all products');
-  const db = getDatabase();
-  return res.json({
-    statusCode: 200,
-    data: db.products
-  });
+  try {
+    console.log('GET /api/products - Getting all products');
+    const db = getDatabase();
+    
+    // Kiểm tra và đảm bảo db.products tồn tại
+    if (!db.products || !Array.isArray(db.products)) {
+      console.log('Products array not found or not an array, returning empty array');
+      return res.json({
+        statusCode: 200,
+        data: []
+      });
+    }
+    
+    return res.json({
+      statusCode: 200,
+      data: db.products
+    });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching products: ' + error.message,
+      data: []
+    });
+  }
 });
 
 // API endpoint để tạo product mới
@@ -1033,32 +1122,60 @@ app.get('/api/team', (req, res) => {
 
 // Teams API endpoint (to match frontend calls to /api/teams)
 app.get('/api/teams', (req, res) => {
-  const db = getDatabase();
-  const teams = db.team || [];
-  
-  res.json({
-    statusCode: 200,
-    message: 'Success',
-    data: teams
-  });
+  try {
+    const db = getDatabase();
+    const teams = db.team || [];
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: teams
+    });
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching teams: ' + error.message,
+      data: []
+    });
+  }
 });
 
 // Get team by ID
 app.get('/api/teams/:id', (req, res) => {
-  const teamId = parseInt(req.params.id, 10);
-  const db = getDatabase();
-  const team = db.team.find(member => member.id === teamId);
-  
-  if (team) {
-    res.json({
-      statusCode: 200,
-      message: 'Success',
-      data: team
-    });
-  } else {
-    res.status(404).json({
-      statusCode: 404,
-      message: 'Team member not found'
+  try {
+    const teamId = parseInt(req.params.id, 10);
+    const db = getDatabase();
+    
+    if (!db.team || !Array.isArray(db.team)) {
+      return res.status(404).json({
+        statusCode: 404,
+        message: 'Team data not found',
+        data: null
+      });
+    }
+    
+    const team = db.team.find(member => member.id === teamId);
+    
+    if (team) {
+      res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: team
+      });
+    } else {
+      res.status(404).json({
+        statusCode: 404,
+        message: 'Team member not found',
+        data: null
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching team member:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Error fetching team member: ' + error.message,
+      data: null
     });
   }
 });
@@ -3036,3 +3153,23 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Export the Express app for serverless functions
 module.exports = app;
+
+// Route mặc định cho root path (/) để trả về JSON thay vì HTML
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({
+    name: 'Thôn Trang Liên Nhất API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: [
+      '/api/products',
+      '/api/services',
+      '/api/news',
+      '/api/teams',
+      '/api/images',
+      '/api/experiences',
+      '/api/parent-navs',
+      '/api/child-navs'
+    ]
+  }, null, 2));
+});
