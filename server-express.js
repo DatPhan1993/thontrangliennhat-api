@@ -6,7 +6,7 @@ const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'https://thontrangliennhat.com';
+const HOST = process.env.HOST || 'https://api.thontrangliennhat.com';
 
 // Define upload directory and ensure it exists
 const UPLOADS_DIR = path.join('/tmp', 'uploads');
@@ -45,7 +45,7 @@ const upload = multer({
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://thontrangliennhat.com',
+  origin: [process.env.CORS_ORIGIN || 'https://thontrangliennhat.com', 'https://www.thontrangliennhat.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
@@ -213,7 +213,21 @@ app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // Access control headers
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // Sử dụng cấu hình CORS động dựa trên biến môi trường
+  const allowedOrigins = [process.env.CORS_ORIGIN || 'https://thontrangliennhat.com', 'https://www.thontrangliennhat.com'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    // Cho phép tất cả cho môi trường phát triển
+    if (process.env.NODE_ENV !== 'production') {
+      res.header('Access-Control-Allow-Origin', '*');
+    } else {
+      res.header('Access-Control-Allow-Origin', allowedOrigins[0]);
+    }
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
@@ -1546,7 +1560,9 @@ app.post('/api/upload/image', upload.single('image'), (req, res) => {
     
     // URL paths
     const fileUrlPath = `/images/uploads/${req.file.filename}`;
-    const absoluteUrlPath = `http://localhost:${PORT}${fileUrlPath}`;
+    const absoluteUrlPath = process.env.NODE_ENV === 'production' 
+      ? `${HOST}${fileUrlPath}` 
+      : `http://localhost:${PORT}${fileUrlPath}`;
     
     console.log('File URL:', fileUrlPath);
     console.log('Absolute URL:', absoluteUrlPath);
@@ -2991,10 +3007,12 @@ app.post('/api/news/:id/upload', upload.array('images[]', 5), (req, res) => {
 // In Vercel, this file will be imported as a serverless function
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Server URL: ${HOST}`);
+});
 } else {
   console.log('Server running in production mode via Vercel');
+  console.log(`API available at: ${HOST}`);
 }
 
 // Export the Express app for serverless functions
