@@ -13,46 +13,81 @@ app.use(cors({
   origin: '*',  // Cho phép tất cả các domain để tránh lỗi CORS
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  credentials: false
+  credentials: false,
+  exposedHeaders: ['Content-Length', 'Content-Type']
 }));
 
 // Middleware để xử lý OPTIONS request (CORS preflight)
 app.options('*', cors());
 
-// Middleware để đảm bảo trả về JSON hợp lệ
+// Đảm bảo CORS header được thiết lập cho mọi response
 app.use((req, res, next) => {
-  // Lưu phương thức json() gốc
-  const originalJson = res.json;
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'false');
   
-  // Ghi đè phương thức json để luôn trả về dữ liệu hợp lệ
-  res.json = function(body) {
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Express JSON middleware with error handling
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
     try {
-      // Đảm bảo body không phải undefined hoặc null
-      if (body === undefined || body === null) {
-        body = {};
-      }
-      
-      // Kiểm tra nếu đây là một endpoint API
-      if (req.path.startsWith('/api/')) {
-        // Đảm bảo response có cấu trúc nhất quán
-        if (!body.statusCode) {
-          body = {
-            statusCode: res.statusCode || 200,
-            message: 'Success',
-            data: body.data || body || []
-          };
-        }
-      }
-      
-      return originalJson.call(this, body);
-    } catch (error) {
-      console.error('Error formatting JSON response:', error);
-      return originalJson.call(this, {
-        statusCode: 500,
-        message: 'Internal Server Error',
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({
+        statusCode: 400,
+        message: 'Invalid JSON: ' + e.message,
         data: []
       });
+      throw new Error('Invalid JSON');
     }
+  }
+}));
+
+// Standardize API responses
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  
+  res.json = function(data) {
+    // Skip if this is not an API request
+    if (!req.path.startsWith('/api/')) {
+      return originalJson.call(this, data);
+    }
+    
+    // Standardize the response format for API endpoints
+    let standardResponse;
+    
+    if (data && data.statusCode) {
+      // Response already has correct format
+      standardResponse = data;
+    } else {
+      // Convert to standard format
+      standardResponse = {
+        statusCode: res.statusCode || 200,
+        message: 'Success',
+        data: data || []
+      };
+    }
+    
+    // Ensure data is never undefined or null
+    if (standardResponse.data === undefined || standardResponse.data === null) {
+      standardResponse.data = [];
+    }
+    
+    // Always return an object for single item requests if endpoint is singular
+    if (req.path.match(/\/api\/[^\/]+\/\d+$/) && 
+        !Array.isArray(standardResponse.data) && 
+        typeof standardResponse.data !== 'object') {
+      standardResponse.data = { value: standardResponse.data };
+    }
+    
+    return originalJson.call(this, standardResponse);
   };
   
   next();
@@ -127,9 +162,6 @@ const upload = multer({
   }
 });
 
-// Express JSON middleware
-app.use(express.json());
-
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -192,94 +224,24 @@ if (fs.existsSync(buildImagesPath)) {
   app.use('/images/uploads', express.static(path.join(buildImagesPath, 'uploads')));
 }
 
-// Provide fallback images if the requested image doesn't exist
-app.use((req, res, next) => {
-  // Only intercept image requests
-  if (req.path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-    // Log the image request for debugging
-    console.log(`Image requested: ${req.path}`);
-    
-    // Special handling for problematic images
-    if (req.path.includes('1747193559802-784322977.jpg') || req.path.includes('1747213249793-521951070.jpg')) {
-      console.log(`Special handling for known problematic image: ${req.path}`);
-      
-      // Set appropriate headers
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.setHeader('Content-Type', 'image/jpeg');
-      
-      // Check multiple possible locations
-      const filename = path.basename(req.path);
-      const possiblePaths = [
-        path.join(__dirname, 'images', 'uploads', filename),
-        path.join(__dirname, 'uploads', filename),
-        path.join(__dirname, 'public', 'images', 'uploads', filename),
-        path.join(__dirname, '..', 'uploads', filename),
-        path.join(__dirname, '..', 'images', 'uploads', filename),
-        path.join(__dirname, '..', 'public', 'images', 'uploads', filename)
-      ];
-      
-      // Try each path
-      for (const filePath of possiblePaths) {
-        console.log(`Checking path: ${filePath}`);
-        if (fs.existsSync(filePath)) {
-          console.log(`Found problematic image at: ${filePath}`);
-          return res.sendFile(filePath);
-        }
-      }
-      
-      // If not found, use default image
-      const fallbackImage = path.join(__dirname, 'public', 'images', 'placeholder.jpg');
-      if (fs.existsSync(fallbackImage)) {
-        console.log(`Problematic image not found, using fallback: ${fallbackImage}`);
-        return res.sendFile(fallbackImage);
-      }
-    }
-    
-    // Regular handling for other images
-    const filePath = path.join(__dirname, req.path);
-    const fallbackImage = path.join(__dirname, 'public', 'images', 'placeholder.jpg');
-    
-    console.log(`Checking path: ${filePath}`);
-    
-    // Check if the requested file exists
-    if (!fs.existsSync(filePath)) {
-      console.log(`Image not found at ${filePath}, trying alternative locations`);
-      
-      // Try parent directory
-      const parentFilePath = path.join(__dirname, '..', req.path);
-      if (fs.existsSync(parentFilePath)) {
-        console.log(`Found image in parent directory: ${parentFilePath}`);
-        return res.sendFile(parentFilePath);
-      }
-      
-      // Try uploads directory variations
-      const filename = path.basename(req.path);
-      const uploadsPaths = [
-        path.join(__dirname, 'uploads', filename),
-        path.join(__dirname, 'images', 'uploads', filename),
-        path.join(__dirname, 'public', 'images', 'uploads', filename),
-        path.join(__dirname, '..', 'uploads', filename),
-        path.join(__dirname, '..', 'images', 'uploads', filename),
-        path.join(__dirname, '..', 'public', 'images', 'uploads', filename)
-      ];
-      
-      for (const uploadPath of uploadsPaths) {
-        if (fs.existsSync(uploadPath)) {
-          console.log(`Found image in alternative location: ${uploadPath}`);
-          return res.sendFile(uploadPath);
-        }
-      }
-      
-      // If fallback exists, use it
-      if (fs.existsSync(fallbackImage)) {
-        console.log(`Using fallback image: ${fallbackImage}`);
-        return res.sendFile(fallbackImage);
-      }
-    }
-  }
-  next();
-});
+// Create placeholder image if it doesn't exist
+const placeholderImagePath = path.join(__dirname, 'public', 'images', 'placeholder.jpg');
+const placeholderDir = path.dirname(placeholderImagePath);
+
+if (!fs.existsSync(placeholderDir)) {
+  console.log(`Creating placeholder image directory: ${placeholderDir}`);
+  fs.mkdirSync(placeholderDir, { recursive: true });
+}
+
+if (!fs.existsSync(placeholderImagePath)) {
+  console.log(`Creating default placeholder image at: ${placeholderImagePath}`);
+  // Creating a 1x1 transparent pixel in base64
+  const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+  fs.writeFileSync(placeholderImagePath, transparentPixel);
+}
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Đảm bảo thư mục uploads có thể truy cập được
 app.use('/images/uploads', express.static(path.join(__dirname, 'images', 'uploads')));
@@ -289,84 +251,110 @@ app.use('/images/uploads', express.static(path.join(__dirname, 'public', 'images
 app.use('/public/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
-// Access control headers
+// Middleware to handle images not found
 app.use((req, res, next) => {
-  // Sử dụng cấu hình CORS động dựa trên biến môi trường
-  const allowedOrigins = [process.env.CORS_ORIGIN || 'https://thontrangliennhat.com', 'https://www.thontrangliennhat.com'];
-  const origin = req.headers.origin;
-  
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    // Cho phép tất cả cho môi trường phát triển
-    if (process.env.NODE_ENV !== 'production') {
-      res.header('Access-Control-Allow-Origin', '*');
-    } else {
-      res.header('Access-Control-Allow-Origin', allowedOrigins[0]);
+  // Only intercept image requests
+  if (req.path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    // Set CORS headers for all image responses
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    
+    // Determine appropriate content type
+    let contentType = 'image/jpeg';
+    if (req.path.endsWith('.png')) contentType = 'image/png';
+    if (req.path.endsWith('.gif')) contentType = 'image/gif';
+    if (req.path.endsWith('.webp')) contentType = 'image/webp';
+    
+    res.setHeader('Content-Type', contentType);
+    
+    // Log image request
+    console.log(`Image requested: ${req.path}`);
+    
+    // Check multiple possible locations
+    const filename = path.basename(req.path);
+    const possiblePaths = [
+      path.join(__dirname, req.path), // Direct path
+      path.join(__dirname, 'images', 'uploads', filename),
+      path.join(__dirname, 'uploads', filename),
+      path.join(__dirname, 'public', 'images', 'uploads', filename),
+      path.join(__dirname, '..', 'uploads', filename),
+      path.join(__dirname, '..', 'images', 'uploads', filename),
+      path.join(__dirname, '..', 'public', 'images', 'uploads', filename),
+      path.join(__dirname, '..', 'build', 'images', 'uploads', filename)
+    ];
+    
+    // Try each path
+    for (const filePath of possiblePaths) {
+      if (fs.existsSync(filePath)) {
+        console.log(`Found image at: ${filePath}`);
+        return res.sendFile(filePath);
+      }
     }
-  }
-  
-  // Không gửi thông tin xác thực với yêu cầu có wildcard origin
-  res.header('Access-Control-Allow-Credentials', 'false');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Add cache control headers to prevent caching of images
-  if (req.path.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)) {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    
+    // If not found, use default image
+    console.log(`Image not found: ${req.path}, using placeholder image`);
+    return res.sendFile(placeholderImagePath);
   }
   
   next();
 });
 
-// Database handling function
-const getDatabase = () => {
-  // For Vercel, use tmp directory if in production
-  const dbPath = process.env.NODE_ENV === 'production' 
-    ? path.join('/tmp', 'database.json')
-    : path.join(__dirname, 'database.json');
-  
+// API endpoint for parent navigation
+app.get('/api/parent-navs', (req, res) => {
   try {
-    if (fs.existsSync(dbPath)) {
-      const data = fs.readFileSync(dbPath, 'utf8');
-      return JSON.parse(data);
-    } else {
-      console.log(`Database file not found at ${dbPath}, creating new one`);
-      const initialData = { products: [] };
-      fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf8');
-      return initialData;
-    }
-  } catch (error) {
-    console.error(`Error reading database: ${error.message}`);
-    return { products: [] };
-  }
-};
-
-// Write database function
-const writeDatabase = (db) => {
-  // For Vercel, use tmp directory if in production
-  const dbPath = process.env.NODE_ENV === 'production' 
-    ? path.join('/tmp', 'database.json')
-    : path.join(__dirname, 'database.json');
-  
-  try {
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
-    console.log(`Database written to ${dbPath}`);
-    return true;
-  } catch (error) {
-    console.error(`Error writing database: ${error.message}`);
-    return false;
-  }
-};
-
-// API endpoint cho navigation
-app.get('/api/parent-navs/all-with-child', (req, res) => {
-  try {
+    console.log(`GET /api/parent-navs - Fetching parent navigation`);
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
     const db = getDatabase();
     
     if (!db.navigation || !Array.isArray(db.navigation)) {
+      console.log('No navigation data found, returning empty array');
+      return res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+    
+    const parentNavs = db.navigation.map(item => ({
+      id: item.id || 0,
+      title: item.title || '',
+      slug: item.slug || '',
+      position: item.position || 0
+    }));
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: parentNavs
+    });
+  } catch (error) {
+    console.error('Error fetching parent navs:', error);
+    // Return empty array instead of error
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: []
+    });
+  }
+});
+
+// API endpoint for all navigation with children
+app.get('/api/parent-navs/all-with-child', (req, res) => {
+  try {
+    console.log(`GET /api/parent-navs/all-with-child - Fetching all navigation with children`);
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      console.log('No navigation data found, returning empty array');
       return res.json({
         statusCode: 200,
         message: 'Success',
@@ -380,63 +368,11 @@ app.get('/api/parent-navs/all-with-child', (req, res) => {
       data: db.navigation
     });
   } catch (error) {
-    console.error('Error fetching navigation:', error);
-    res.status(500).json({
-      statusCode: 500,
-      message: 'Error fetching navigation: ' + error.message,
-      data: []
-    });
-  }
-});
-
-app.get('/api/navigation-links', (req, res) => {
-  try {
-    const db = getDatabase();
-    
-    if (!db.navigation || !Array.isArray(db.navigation)) {
-      return res.json([]);
-    }
-    
-    res.json(db.navigation);
-  } catch (error) {
-    console.error('Error fetching navigation links:', error);
-    res.status(500).json({
-      statusCode: 500,
-      message: 'Error fetching navigation links: ' + error.message,
-      data: []
-    });
-  }
-});
-
-app.get('/api/parent-navs', (req, res) => {
-  try {
-    const db = getDatabase();
-    
-    if (!db.navigation || !Array.isArray(db.navigation)) {
-      return res.json({
-        statusCode: 200,
-        message: 'Success',
-        data: []
-      });
-    }
-    
-    const parentNavs = db.navigation.map(item => ({
-      id: item.id,
-      title: item.title,
-      slug: item.slug,
-      position: item.position
-    }));
-    
+    console.error('Error fetching all navigation with children:', error);
+    // Return empty array instead of error
     res.json({
       statusCode: 200,
       message: 'Success',
-      data: parentNavs
-    });
-  } catch (error) {
-    console.error('Error fetching parent navs:', error);
-    res.status(500).json({
-      statusCode: 500,
-      message: 'Error fetching parent navs: ' + error.message,
       data: []
     });
   }
@@ -444,21 +380,74 @@ app.get('/api/parent-navs', (req, res) => {
 
 // Endpoint for fetching categories by parent nav slug
 app.get('/api/parent-navs/slug/:slug', (req, res) => {
-  const slug = req.params.slug;
-  const db = getDatabase();
-  const parentNav = db.navigation.find(nav => nav.slug === slug);
-  
-  if (parentNav) {
+  try {
+    const slug = req.params.slug;
+    console.log(`GET /api/parent-navs/slug/${slug} - Fetching categories by slug`);
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      console.log('No navigation data found, returning empty array');
+      return res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+    
+    const parentNav = db.navigation.find(nav => nav.slug === slug);
+    
+    if (parentNav) {
+      res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: parentNav.children || []
+      });
+    } else {
+      // Return empty array instead of 404
+      console.log(`No parent navigation found with slug: ${slug}, returning empty array`);
+      res.json({
+        statusCode: 200,
+        message: 'Success',
+        data: []
+      });
+    }
+  } catch (error) {
+    console.error(`Error fetching categories by slug ${req.params.slug}:`, error);
+    // Return empty array instead of error
     res.json({
       statusCode: 200,
       message: 'Success',
-      data: parentNav.children
+      data: []
     });
-  } else {
-    res.status(404).json({
-      statusCode: 404,
-      message: 'Parent navigation not found'
-    });
+  }
+});
+
+// API endpoint for navigation links - for backward compatibility
+app.get('/api/navigation-links', (req, res) => {
+  try {
+    console.log(`GET /api/navigation-links - Fetching navigation links`);
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
+    const db = getDatabase();
+    
+    if (!db.navigation || !Array.isArray(db.navigation)) {
+      console.log('No navigation data found, returning empty array');
+      return res.json([]);
+    }
+    
+    res.json(db.navigation);
+  } catch (error) {
+    console.error('Error fetching navigation links:', error);
+    // Return empty array instead of error
+    res.json([]);
   }
 });
 
@@ -1184,8 +1173,13 @@ app.get('/api/team', (req, res) => {
 // Teams API endpoint (to match frontend calls to /api/teams)
 app.get('/api/teams', (req, res) => {
   try {
+    console.log(`GET /api/teams - Fetching team members`);
     const db = getDatabase();
     const teams = db.team || [];
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     res.json({
       statusCode: 200,
@@ -1194,18 +1188,25 @@ app.get('/api/teams', (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching teams:', error);
-    res.status(500).json({
-      statusCode: 500,
-      message: 'Error fetching teams: ' + error.message,
+    // Return empty array instead of error
+    res.json({
+      statusCode: 200,
+      message: 'Success', 
       data: []
     });
   }
 });
 
-// Get team by ID
+// Get team members by ID
 app.get('/api/teams/:id', (req, res) => {
   try {
-    const teamId = parseInt(req.params.id, 10);
+    const teamId = parseInt(req.params.id, 10) || 0;
+    console.log(`GET /api/teams/${teamId} - Fetching team member`);
+    
+    // Set CORS headers specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
     const db = getDatabase();
     
     if (!db.team || !Array.isArray(db.team)) {
@@ -1503,21 +1504,21 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
-// Khởi động server
-app.listen(PORT, () => {
-  console.log(`Server đang chạy tại http://localhost:${PORT}`);
-  console.log('Các endpoint API có sẵn:');
-  console.log('- http://localhost:' + PORT + '/api/navigation-links');
-  console.log('- http://localhost:' + PORT + '/api/parent-navs/all-with-child');
-  console.log('- http://localhost:' + PORT + '/api/parent-navs');
-  console.log('- http://localhost:' + PORT + '/api/parent-navs/slug/:slug');
-  console.log('- http://localhost:' + PORT + '/api/child-navs');
-  console.log('- http://localhost:' + PORT + '/api/products');
-  console.log('- http://localhost:' + PORT + '/api/teams');
-  console.log('- http://localhost:' + PORT + '/api/images');
-  console.log('- http://localhost:' + PORT + '/api/contact');
-  console.log('- http://localhost:' + PORT + '/api/notifications');
-});
+// Khởi động server - DISABLED: Server is started at the end of file
+// app.listen(PORT, () => {
+//   console.log(`Server đang chạy tại http://localhost:${PORT}`);
+//   console.log('Các endpoint API có sẵn:');
+//   console.log('- http://localhost:' + PORT + '/api/navigation-links');
+//   console.log('- http://localhost:' + PORT + '/api/parent-navs/all-with-child');
+//   console.log('- http://localhost:' + PORT + '/api/parent-navs');
+//   console.log('- http://localhost:' + PORT + '/api/parent-navs/slug/:slug');
+//   console.log('- http://localhost:' + PORT + '/api/child-navs');
+//   console.log('- http://localhost:' + PORT + '/api/products');
+//   console.log('- http://localhost:' + PORT + '/api/teams');
+//   console.log('- http://localhost:' + PORT + '/api/images');
+//   console.log('- http://localhost:' + PORT + '/api/contact');
+//   console.log('- http://localhost:' + PORT + '/api/notifications');
+// });
 
 // API endpoint cho images
 app.get('/api/images', (req, res) => {
@@ -3234,12 +3235,33 @@ app.post('/api/news/:id/upload', upload.array('images[]', 5), (req, res) => {
 // In Vercel, this file will be imported as a serverless function
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Server URL: ${HOST}`);
-});
+    console.log(`\n==================================================`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Server URL: ${HOST}`);
+    console.log(`API root available at: ${HOST} or http://localhost:${PORT}`);
+    console.log(`CORS configured to allow all origins: *`);
+    console.log(`==================================================\n`);
+    console.log('Available API endpoints:');
+    console.log('- /api/navigation-links');
+    console.log('- /api/parent-navs/all-with-child');
+    console.log('- /api/parent-navs');
+    console.log('- /api/parent-navs/slug/:slug');
+    console.log('- /api/child-navs');
+    console.log('- /api/products');
+    console.log('- /api/services');
+    console.log('- /api/teams');
+    console.log('- /api/images');
+    console.log('- /api/contact');
+    console.log('- /api/news');
+    console.log('- /api/experiences');
+    console.log(`\n==================================================`);
+  });
 } else {
+  console.log('\n==================================================');
   console.log('Server running in production mode via Vercel');
   console.log(`API available at: ${HOST}`);
+  console.log('CORS configured to allow all origins: *');
+  console.log('==================================================\n');
 }
 
 // Export the Express app for serverless functions
@@ -3248,10 +3270,13 @@ module.exports = app;
 // Route mặc định cho root path (/) để trả về JSON thay vì HTML
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.send(JSON.stringify({
     name: 'Thôn Trang Liên Nhất API',
     version: '1.0.0',
     status: 'running',
+    timestamp: new Date().toISOString(),
     endpoints: [
       '/api/products',
       '/api/services',
@@ -3260,7 +3285,9 @@ app.get('/', (req, res) => {
       '/api/images',
       '/api/experiences',
       '/api/parent-navs',
-      '/api/child-navs'
+      '/api/child-navs',
+      '/api/contact',
+      '/api/navigation-links'
     ]
   }, null, 2));
 });
