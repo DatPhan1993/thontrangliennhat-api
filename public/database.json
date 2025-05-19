@@ -478,28 +478,28 @@
   "images": [
     {
       "id": 4,
-      "url": "http://localhost:3001/images/uploads/1746436287434-688626741.jpg",
+      "url": "https://api.thontrangliennhat.com/images/uploads/1746436287434-688626741.jpg",
       "name": "manager.jpg",
       "description": "Hình ảnh tải lên: manager.jpg",
       "createdAt": "2025-05-05T09:11:27.448Z"
     },
     {
       "id": 5,
-      "url": "http://localhost:3001/images/uploads/1746436606366-355570822.jpg",
+      "url": "https://api.thontrangliennhat.com/images/uploads/1746436606366-355570822.jpg",
       "name": "director.jpg",
       "description": "Hình ảnh tải lên: director.jpg",
       "createdAt": "2025-05-05T09:16:46.385Z"
     },
     {
       "id": 6,
-      "url": "http://localhost:3001/images/uploads/1746455297009-500393000.jpg",
+      "url": "https://api.thontrangliennhat.com/images/uploads/1746455297009-500393000.jpg",
       "name": "z6475056101463_ed4e975fcaaf1cf2234cf67cd2dbf641.jpg",
       "description": "Hình ảnh tải lên: z6475056101463_ed4e975fcaaf1cf2234cf67cd2dbf641.jpg",
       "createdAt": "2025-05-05T14:28:17.024Z"
     },
     {
       "id": 7,
-      "url": "http://localhost:3001/images/uploads/1746455326018-497167650.jpg",
+      "url": "https://api.thontrangliennhat.com/images/uploads/1746455326018-497167650.jpg",
       "name": "experience2.jpg",
       "description": "Hình ảnh tải lên: experience2.jpg",
       "createdAt": "2025-05-05T14:28:46.036Z"
