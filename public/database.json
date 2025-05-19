@@ -1,0 +1,513 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@phunongbuondon.com",
+      "password": "$2a$10$H9dE2xjvii6EYzaJTxYyb.9z7Jv4vgaF4XUj7SVvVo.ADSs4.tI6.",
+      "role": "admin",
+      "name": "Administrator",
+      "avatar": "https://i.pravatar.cc/150?img=1",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "email": "user@phunongbuondon.com",
+      "password": "$2a$10$H9dE2xjvii6EYzaJTxYyb.9z7Jv4vgaF4XUj7SVvVo.ADSs4.tI6.",
+      "role": "user",
+      "name": "Normal User",
+      "avatar": "https://i.pravatar.cc/150?img=2",
+      "createdAt": "2024-01-02T00:00:00.000Z",
+      "updatedAt": "2024-01-02T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "email": "admin@thontrangliennhat.com",
+      "password": "dat12345",
+      "role": "admin",
+      "name": "Administrator",
+      "avatar": "https://i.pravatar.cc/150?img=1",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "navigation": [
+    {
+      "id": 1,
+      "title": "TRANG CHỦ",
+      "slug": "",
+      "position": 1,
+      "children": []
+    },
+    {
+      "id": 2,
+      "title": "GIỚI THIỆU",
+      "slug": "gioi-thieu",
+      "position": 2,
+      "children": []
+    },
+    {
+      "id": 3,
+      "title": "SẢN PHẨM",
+      "slug": "san-pham",
+      "position": 3,
+      "children": []
+    },
+    {
+      "id": 4,
+      "title": "DỊCH VỤ",
+      "slug": "dich-vu",
+      "position": 4,
+      "children": []
+    },
+    {
+      "id": 5,
+      "title": "TRẢI NGHIỆM",
+      "slug": "trai-nghiem",
+      "position": 5,
+      "children": []
+    },
+    {
+      "id": 6,
+      "title": "TIN TỨC",
+      "slug": "tin-tuc",
+      "position": 6,
+      "children": []
+    },
+    {
+      "id": 7,
+      "title": "LIÊN HỆ",
+      "slug": "lien-he",
+      "position": 7,
+      "children": []
+    }
+  ],
+  "categories": [
+    {
+      "id": 10,
+      "title": "Tour du lịch sinh thái",
+      "slug": "tour-du-lich-sinh-thai",
+      "description": "Khám phá vẻ đẹp thiên nhiên và hệ sinh thái phong phú tại Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-10T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 11,
+      "title": "Trải nghiệm ẩm thực",
+      "slug": "trai-nghiem-am-thuc",
+      "description": "Thưởng thức ẩm thực đặc sắc của vùng quê Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-02T00:00:00.000Z",
+      "updatedAt": "2024-01-12T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 12,
+      "title": "Hoạt động tại Thôn Trang Liên Nhật",
+      "slug": "hoat-dong-cho-tre-em",
+      "description": "Các hoạt động giáo dục, văn hóa và giải trí tại khu vực Thôn Trang Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-03T00:00:00.000Z",
+      "updatedAt": "2024-01-13T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 4,
+      "title": "Trải nghiệm nông nghiệp",
+      "slug": "trai-nghiem-nong-nghiep",
+      "description": "Tham gia vào hoạt động canh tác và thu hoạch nông sản tại Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-04T00:00:00.000Z",
+      "updatedAt": "2024-01-14T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 5,
+      "title": "Homestay",
+      "slug": "homestay",
+      "description": "Trải nghiệm cuộc sống tại nông thôn cùng người dân địa phương",
+      "parent_id": null,
+      "createdAt": "2024-01-05T00:00:00.000Z",
+      "updatedAt": "2024-01-15T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 13,
+      "title": "Khám phá cảnh đẹp",
+      "slug": "kham-pha-canh-dep",
+      "description": "Khám phá vẻ đẹp tự nhiên và cảnh quan đặc sắc tại Thôn Trang Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-06T00:00:00.000Z",
+      "updatedAt": "2024-01-16T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 14,
+      "title": "Trải nghiệm văn hóa truyền thống",
+      "slug": "trai-nghiem-van-hoa-truyen-thong",
+      "description": "Tìm hiểu và tham gia vào các hoạt động văn hóa truyền thống của địa phương",
+      "parent_id": null,
+      "createdAt": "2024-01-07T00:00:00.000Z",
+      "updatedAt": "2024-01-17T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 15,
+      "title": "Câu cá thư giãn",
+      "slug": "cau-ca-thu-gian",
+      "description": "Thư giãn và trải nghiệm hoạt động câu cá tại ao hồ trong khu vực Thôn Trang Liên Nhật",
+      "parent_id": null,
+      "createdAt": "2024-01-08T00:00:00.000Z",
+      "updatedAt": "2024-01-18T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 16,
+      "title": "Chợ quê truyền thống",
+      "slug": "cho-que-truyen-thong",
+      "description": "Trải nghiệm không khí chợ quê truyền thống với các đặc sản địa phương",
+      "parent_id": null,
+      "createdAt": "2024-01-09T00:00:00.000Z",
+      "updatedAt": "2024-01-19T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 17,
+      "title": "Cối xay gió",
+      "slug": "coi-xay-gio",
+      "description": "Check-in cùng mô hình cối xay gió rực rỡ ánh đèn về đêm",
+      "parent_id": null,
+      "createdAt": "2024-01-10T00:00:00.000Z",
+      "updatedAt": "2024-01-20T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 18,
+      "title": "Nhà hàng trên đầm sen",
+      "slug": "nha-hang-tren-dam-sen",
+      "description": "Thưởng thức ẩm thực đặc sản địa phương trong không gian sinh thái trên đầm sen",
+      "parent_id": null,
+      "createdAt": "2024-01-11T00:00:00.000Z",
+      "updatedAt": "2024-01-21T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 19,
+      "title": "Hoạt động cho trẻ em",
+      "slug": "hoat-dong-cho-tre-em-cu-the",
+      "description": "Các hoạt động vui chơi, học tập dành cho trẻ em trong môi trường tự nhiên",
+      "parent_id": null,
+      "createdAt": "2024-01-12T00:00:00.000Z",
+      "updatedAt": "2024-01-22T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 20,
+      "title": "Làm bánh truyền thống",
+      "slug": "lam-banh-truyen-thong",
+      "description": "Trải nghiệm làm bánh truyền thống của vùng quê Hà Tĩnh",
+      "parent_id": null,
+      "createdAt": "2024-01-13T00:00:00.000Z",
+      "updatedAt": "2024-01-23T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    },
+    {
+      "id": 21,
+      "title": "Hái rau quả theo mùa",
+      "slug": "hai-rau-qua-theo-mua",
+      "description": "Trải nghiệm hái rau quả tươi ngon theo mùa tại vườn rau hữu cơ",
+      "parent_id": null,
+      "createdAt": "2024-01-14T00:00:00.000Z",
+      "updatedAt": "2024-01-24T00:00:00.000Z",
+      "type": "trai-nghiem",
+      "image": "https://placehold.co/600x400/png"
+    }
+  ],
+  "products": [
+    {
+      "id": 1,
+      "name": "Súp hải sản",
+      "images": [
+        "images/uploads/1747304857516-52837735.jpg"
+      ],
+      "content": "Súp hải sản là một món ăn ngon, bổ dưỡng, thường được dùng làm món khai vị trong các bữa tiệc hoặc bữa ăn gia đình. Món này kết hợp các loại hải sản như tôm, mực, cua, nghêu… cùng với nước dùng đậm đà, rau củ và trứng, tạo nên hương vị thanh ngọt tự nhiên.",
+      "slug": "sup-hai-san",
+      "summary": "Súp hải sản là món khai vị được nhiều quý khách tin dùng",
+      "child_nav_id": "khai-vi",
+      "features": "[]",
+      "created_at": "2025-05-15T10:27:37.520Z",
+      "updated_at": "2025-05-15T10:27:37.520Z",
+      "phone_number": "0943768858",
+      "type": "san-pham",
+      "isFeatured": true
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "name": "Mô hình sinh thái Ba Trong Một",
+      "slug": "mo-hinh-sinh-thai-ba-trong-mot",
+      "summary": "Trải nghiệm mô hình sinh thái kết hợp 3 trong 1 tại Liên Nhật",
+      "description": "<p>NÔNG NGHIỆP XANH - MÔ HÌNH SINH KẾ 3 TRONG 1 </p> <p>HTX sản xuất Nông Nghiệp và Dịch vụ tổng hợp Liên Nhật luôn đi theo hướng nông nghiệp sạch, sản xuất nông sản theo hướng hữu cơ, kết hợp nuôi trồng thuỷ sản và các loại hình dịch vụ để thay đổi hướng phát triển nông nghiệp hiện nay.</p><p>Mô hình 3 trong 1 bao gồm:</p><h3>1. Nông nghiệp hữu cơ</h3><p>Canh tác sản xuất nông nghiệp theo hướng hữu cơ, không sử dụng thuốc trừ sâu, phân bón hóa học, đảm bảo sản phẩm an toàn cho sức khỏe người tiêu dùng và thân thiện với môi trường.</p><ul><li>Trồng rau, củ, quả sạch</li><li>Nuôi trồng thủy sản không sử dụng hóa chất</li><li>Chăn nuôi gia cầm theo phương pháp tự nhiên</li></ul><h3>2. Chế biến nông sản</h3><p>Từ nguồn nguyên liệu tươi sạch tại chỗ, HTX thực hiện chế biến các sản phẩm nông sản có giá trị kinh tế cao, đáp ứng nhu cầu thị trường.</p><ul><li>Chế biến thực phẩm từ nguồn nguyên liệu tươi sạch</li><li>Đóng gói, bảo quản sản phẩm theo tiêu chuẩn</li><li>Phát triển thương hiệu cho các sản phẩm đặc trưng</li></ul><h3>3. Du lịch sinh thái</h3><p>Phát triển mô hình du lịch sinh thái gắn liền với hoạt động nông nghiệp, tạo thêm giá trị kinh tế và quảng bá sản phẩm địa phương.</p><ul><li>Tham quan mô hình nông nghiệp hữu cơ</li><li>Trải nghiệm hoạt động canh tác, thu hoạch</li><li>Thưởng thức ẩm thực từ sản phẩm địa phương</li></ul>",
+      "price": 0,
+      "discountPrice": 0,
+      "images": "/images/services/mo-hinh-sinh-thai.jpg",
+      "categoryId": 3,
+      "isFeatured": true,
+      "views": 135,
+      "type": "dich-vu",
+      "createdAt": "2025-01-10T00:00:00.000Z",
+      "updatedAt": "2025-02-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Trải nghiệm bắt cá cùng trẻ em vùng quê",
+      "slug": "trai-nghiem-bat-ca-cung-tre-em",
+      "summary": "Hoạt động bắt cá thú vị dành cho trẻ em và gia đình tại ruộng bùn Liên Nhật",
+      "description": "<p>Trẻ em và gia đình sẽ được trải nghiệm hoạt động bắt cá thủ công với dụng cụ truyền thống tại ruộng bùn. Đây là hoạt động vui nhộn và giáo dục, giúp trẻ em hiểu thêm về cuộc sống nông thôn, phát triển kỹ năng làm việc nhóm và tạo kỷ niệm đáng nhớ.</p><h3>Thông tin chi tiết:</h3><p>Hoạt động bắt cá truyền thống là một trải nghiệm đặc biệt được tổ chức tại Liên Nhật, mang đến cho trẻ em và gia đình những phút giây thư giãn và học hỏi về văn hóa nông nghiệp.</p><h3>Nội dung trải nghiệm:</h3><ul><li>Hướng dẫn các kỹ thuật bắt cá truyền thống an toàn</li><li>Trang bị dụng cụ bắt cá phù hợp cho từng độ tuổi</li><li>Trải nghiệm lội ruộng bùn, tìm kiếm và bắt cá</li><li>Tìm hiểu về các loài cá nước ngọt phổ biến ở vùng Liên Nhật</li><li>Học cách làm sạch và chế biến cá sau khi bắt</li></ul><h3>Lợi ích:</h3><ul><li>Giúp trẻ em hiểu hơn về cuộc sống nông thôn và nguồn gốc thực phẩm</li><li>Phát triển kỹ năng vận động và phối hợp nhóm</li><li>Tạo cơ hội gắn kết gia đình thông qua hoạt động vui chơi giáo dục</li><li>Trải nghiệm văn hóa địa phương một cách trực tiếp và thú vị</li></ul><h3>Thời gian tổ chức:</h3><p>Hoạt động được tổ chức vào các buổi sáng từ 8h đến 10h và chiều từ 15h đến 17h hàng ngày.</p><p>Đặc biệt phù hợp cho các gia đình có trẻ em từ 5-15 tuổi, đoàn khách tham quan và các nhóm học sinh đến trải nghiệm thực tế.</p>",
+      "price": 200000,
+      "discountPrice": 150000,
+      "images": "/images/services/bat-ca-tre-em.jpg",
+      "categoryId": 3,
+      "isFeatured": true,
+      "views": 120,
+      "type": "dich-vu",
+      "createdAt": "2025-01-15T00:00:00.000Z",
+      "updatedAt": "2025-02-05T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Chợ phiên nông sản sạch",
+      "slug": "cho-phien-nong-san-sach",
+      "summary": "Trải nghiệm mua sắm và thưởng thức nông sản sạch từ vùng Liên Nhật",
+      "description": "<p>Chợ phiên nông sản sạch là nơi bạn có thể tìm thấy những sản phẩm nông nghiệp tươi ngon, được trồng và thu hoạch theo phương pháp tự nhiên, không sử dụng hóa chất độc hại. Tại đây có đa dạng các loại rau củ quả, thảo mộc, và các sản phẩm đặc sản địa phương do chính người dân canh tác và sản xuất.</p><h3>Đặc điểm nổi bật của chợ phiên:</h3><ul><li>Các sản phẩm đều được trồng và thu hoạch tại Liên Nhật hoặc vùng lân cận</li><li>Đảm bảo tiêu chuẩn hữu cơ, không sử dụng thuốc trừ sâu và phân bón hóa học</li><li>Giá cả hợp lý, hỗ trợ trực tiếp người nông dân địa phương</li><li>Không gian mua sắm thân thiện, gần gũi với thiên nhiên</li></ul><h3>Các loại sản phẩm tại chợ phiên:</h3><ol><li><strong>Rau củ quả tươi:</strong> Các loại rau xanh, củ quả theo mùa được thu hoạch trong ngày</li><li><strong>Thảo mộc:</strong> Các loại rau thơm, cây thuốc nam được trồng tại vườn thảo mộc của HTX</li><li><strong>Thủy sản tươi sống:</strong> Cá, tôm nuôi tự nhiên tại ao, hồ trong khu vực</li><li><strong>Trái cây theo mùa:</strong> Các loại trái cây đặc sản địa phương</li><li><strong>Sản phẩm chế biến:</strong> Mật ong rừng, tinh dầu, bánh kẹo thủ công...</li></ol><h3>Thời gian tổ chức:</h3><p>Chợ phiên được tổ chức vào sáng thứ Bảy và Chủ nhật hàng tuần, từ 6h đến 10h sáng.</p><p>Vào các dịp lễ hội đặc biệt, chợ phiên sẽ được mở rộng với nhiều hoạt động văn hóa và ẩm thực đặc sắc hơn.</p>",
+      "price": 0,
+      "discountPrice": 0,
+      "images": "/images/services/cho-phien-nong-san.jpg",
+      "categoryId": 4,
+      "isFeatured": true,
+      "views": 95,
+      "type": "dich-vu",
+      "createdAt": "2025-01-20T00:00:00.000Z",
+      "updatedAt": "2025-02-10T00:00:00.000Z"
+    }
+  ],
+  "experiences": [
+    {
+      "id": 2,
+      "title": "Trải nghiệm nông nghiệp",
+      "name": "Trải nghiệm nông nghiệp",
+      "slug": "trai-nghiem-nong-nghiep",
+      "summary": "Tham gia các hoạt động nông nghiệp tại Liên Nhật",
+      "description": "Trải nghiệm các hoạt động nông nghiệp đặc trưng vùng quê, từ trồng rau đến thu hoạch nông sản.",
+      "images": [
+        "/images/uploads/1747060398871-576342009.jpg"
+      ],
+      "categoryId": 5,
+      "isFeatured": true,
+      "views": 60,
+      "createdAt": "2025-05-10T08:12:34.779Z",
+      "updatedAt": "2025-05-10T08:12:34.779Z",
+      "content": "ok không",
+      "child_nav_id": "52",
+      "updated_at": "2025-05-12T14:33:24.832Z"
+    },
+    {
+      "id": 3,
+      "title": "hfasd",
+      "name": "hfasd",
+      "slug": "hfasd",
+      "summary": "Trải nghiệm thú vị về câu cá và bắt cá dành cho trẻ em và người lớn",
+      "description": "dsfsdfsadfasdfsdaf",
+      "content": "dsfsdfsadfasdfsdaf",
+      "images": [
+        "/images/uploads/1747063886430-769371210.jpg"
+      ],
+      "categoryId": 51,
+      "child_nav_id": "51",
+      "isFeatured": true,
+      "views": 0,
+      "createdAt": "2025-05-12T15:31:26.434Z",
+      "updatedAt": "2025-05-12T15:31:26.434Z"
+    },
+    {
+      "id": 4,
+      "title": "ok nhé",
+      "name": "ok nhé",
+      "slug": "ok-nhé",
+      "summary": "Trải nghiệm mùa hè tại Thôn Trang Liên Nhật",
+      "description": "hehe",
+      "content": "hehe",
+      "images": [
+        "/images/uploads/1747063927042-833231276.jpg"
+      ],
+      "categoryId": 52,
+      "child_nav_id": "52",
+      "isFeatured": true,
+      "views": 0,
+      "createdAt": "2025-05-12T15:32:07.045Z",
+      "updatedAt": "2025-05-12T15:32:07.045Z"
+    }
+  ],
+  "news": [
+    {
+      "id": 1,
+      "title": "HTX Liên Nhật chuẩn bị hè sang",
+      "slug": "htx-lien-nhat-chuan-bi-he-sang",
+      "summary": "HTX Sản Xuất Nông Nghiệp Và Dịch Vụ Tổng Hợp Liên Nhật chuẩn bị hè sang",
+      "content": "<p>Mùa hè đã về, Thôn Trang Liên Nhật lại rộn ràng chuẩn bị đón bước chân của những người yêu thiên nhiên, thích khám phá và muốn tìm về chốn bình yên. Hẹn gặp bạn giữa mênh mông đồng nội, hoa cỏ và nắng vàng!</p>",
+      "images": "/images/logos/bht.jpg",
+      "categoryId": 5,
+      "isFeatured": true,
+      "views": 450,
+      "createdAt": "2024-03-12T00:00:00.000Z",
+      "updatedAt": "2024-03-15T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Nông Nghiệp Xanh - Mô hình sinh kế 3 trong 1",
+      "slug": "nong-nghiep-xanh-mo-hinh-sinh-ke-3-trong-1",
+      "summary": "Nông Nghiệp Xanh - Mô hình sinh kế 3 trong 1",
+      "content": "<p>HTX sản xuất Nông Nghiệp và Dịch vụ tổng hợp Liên Nhật luôn đi theo hướng nông nghiệp sạch, sản xuất nông sản theo hướng hữu cơ, kết hợp nuôi trồng thuỷ sản và các loại hình dịch vụ để thay đổi hướng phát triển nông nghiệp hiện nay.</p>",
+      "images": "/images/experiences/experience3.jpg",
+      "categoryId": 6,
+      "isFeatured": true,
+      "views": 380,
+      "createdAt": "2024-02-20T00:00:00.000Z",
+      "updatedAt": "2024-02-25T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Phan Văn Đạt",
+      "slug": "tin-tuc-3",
+      "summary": "phan-van-dat",
+      "content": "<p>Phan Văn Đạt</p>",
+      "image": "/images/uploads/1746459050389-883387038.jpg",
+      "categoryId": 61,
+      "authorId": 1,
+      "status": "published",
+      "isFeatured": true,
+      "createdAt": "2025-05-05T15:30:50.409Z",
+      "updatedAt": "2025-05-06T03:08:08.408Z"
+    },
+    {
+      "id": 4,
+      "title": "Lê Hoài Sang",
+      "slug": "tin-tuc-4",
+      "summary": "Lê Hoài Sang",
+      "content": "<p>Lê Hoài Sang</p>",
+      "image": "/images/uploads/1746459664767-394734778.jpg",
+      "categoryId": "61",
+      "authorId": 1,
+      "status": "published",
+      "isFeatured": true,
+      "createdAt": "2025-05-05T15:41:04.798Z",
+      "updatedAt": "2025-05-05T15:41:04.798Z"
+    }
+  ],
+  "team": [
+    {
+      "id": 1,
+      "name": "Nguyễn Hữu Quyền",
+      "position": "Giám đốc HTX",
+      "avatar": "/images/teams/gd.jpg",
+      "image": "/images/teams/gd.jpg",
+      "description": "Ông Nguyễn Hữu Quyền có hơn 15 năm kinh nghiệm trong lĩnh vực nông nghiệp và du lịch sinh thái.",
+      "createdAt": "2022-01-01T00:00:00.000Z",
+      "updatedAt": "2022-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Võ Tá Quỳnh",
+      "position": "Quản Lý Thôn Trang Liên Nhật",
+      "avatar": "/images/teams/quynh.jpg",
+      "image": "/images/teams/quynh.jpg",
+      "description": "Ông Võ Tá Quỳnh chuyên về phát triển sản phẩm và marketing cho các sản phẩm nông nghiệp và du lịch.",
+      "createdAt": "2022-01-01T00:00:00.000Z",
+      "updatedAt": "2022-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "DatPhan",
+      "position": "IT",
+      "avatar": "/images/uploads/1746548663990-161438618.jpg",
+      "image": "/images/uploads/1746548663990-161438618.jpg",
+      "description": "",
+      "createdAt": "2025-05-06T16:24:23.997Z",
+      "updatedAt": "2025-05-08T05:38:52.853Z"
+    }
+  ],
+  "videos": [
+    {
+      "id": 1,
+      "url": "https://www.youtube.com/watch?v=ZB1TiDSNf10",
+      "name": "Giới Thiệu Cảnh Đẹp Trong Thôn Trang Liên Nhật",
+      "description": "Thôn Trang Liên Nhật là một khu du lịch sinh thái ấm thực động quê, được xây dựng từ ngày 22-12-2022 và hoàn thành đi vào hoạt động ngày 29-4-2023.",
+      "createdAt": "2024-04-15T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "url": "https://www.youtube.com/watch?v=QrRr_P6xav4",
+      "name": "Thôn Trang Liên Nhật tổ chức phiên chợ quê theo mô hình sinh thái tổng hợp (lần thứ 3)",
+      "description": "Thôn Trang Liên Nhật tổ chức phiên chợ quê theo mô hình sinh thái tổng hợp (lần thứ 3) với nhiều hoạt động vui chơi, giải trí và ẩm thực đặc sản địa phương.",
+      "createdAt": "2024-04-20T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "url": "https://www.youtube.com/shorts/KiJRPnynuVQ",
+      "name": "Trải Nghiệm Ẩm Thực Thôn Trang Liên Nhật",
+      "description": "Thưởng thức các món ăn đặc sản tại nhà hàng trên đầm sen của Thôn Trang Liên Nhật.",
+      "createdAt": "2024-04-25T00:00:00.000Z"
+    }
+  ],
+  "images": [
+    {
+      "id": 4,
+      "url": "http://localhost:3001/images/uploads/1746436287434-688626741.jpg",
+      "name": "manager.jpg",
+      "description": "Hình ảnh tải lên: manager.jpg",
+      "createdAt": "2025-05-05T09:11:27.448Z"
+    },
+    {
+      "id": 5,
+      "url": "http://localhost:3001/images/uploads/1746436606366-355570822.jpg",
+      "name": "director.jpg",
+      "description": "Hình ảnh tải lên: director.jpg",
+      "createdAt": "2025-05-05T09:16:46.385Z"
+    },
+    {
+      "id": 6,
+      "url": "http://localhost:3001/images/uploads/1746455297009-500393000.jpg",
+      "name": "z6475056101463_ed4e975fcaaf1cf2234cf67cd2dbf641.jpg",
+      "description": "Hình ảnh tải lên: z6475056101463_ed4e975fcaaf1cf2234cf67cd2dbf641.jpg",
+      "createdAt": "2025-05-05T14:28:17.024Z"
+    },
+    {
+      "id": 7,
+      "url": "http://localhost:3001/images/uploads/1746455326018-497167650.jpg",
+      "name": "experience2.jpg",
+      "description": "Hình ảnh tải lên: experience2.jpg",
+      "createdAt": "2025-05-05T14:28:46.036Z"
+    }
+  ],
+  "contacts": [],
+  "syncInfo": {
+    "lastSync": "2025-05-15T06:41:03.381Z"
+  },
+  "_lastSync": "2025-05-15T06:41:03.381Z"
+}

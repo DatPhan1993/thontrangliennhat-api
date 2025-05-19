@@ -1,7 +1,7 @@
 {
   "name": "phunongbuondon-api",
   "version": "1.0.0",
-  "description": "API server for Phú Nông Buôn Đôn website",
+  "description": "API server for Phú Nông Liên Nhật website",
   "main": "server-express.js",
   "scripts": {
     "start-json": "json-server --watch database.json --port 3001 --routes routes.json --middlewares db-middlewares.js",

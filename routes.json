@@ -10,5 +10,8 @@
   "/api/news": "/news",
   "/api/team": "/team",
   "/api/categories": "/categories",
+  "/api/auth/login": "/auth/login",
+  "/api/auth/logout": "/auth/logout",
+  "/api/auth/refresh": "/auth/refresh",
   "/api/*": "/$1"
 } 

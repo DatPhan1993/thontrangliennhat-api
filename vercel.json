@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server-express.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server-express.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server-express.js"
+    }
+  ],
+  "env": {
+    "PORT": "3000",
+    "HOST": "https://thontrangliennhat.com",
+    "CORS_ORIGIN": "https://thontrangliennhat.com",
+    "NODE_ENV": "production"
+  }
+} 
