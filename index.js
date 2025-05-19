@@ -23,19 +23,35 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import API routes
+const apiRoutes = require('./api/index.js');
+
+// Mount API routes
+app.use('/api', apiRoutes);
+
 // Define a simple health check route
 app.get('/', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'API is running in root handler',
+    message: 'API server is running',
+    endpoints: [
+      '/api/products',
+      '/api/services',
+      '/api/teams',
+      '/api/parent-navs'
+    ],
     time: new Date().toISOString()
   });
 });
 
-// Redirect to the API handler
-app.all('/api/*', (req, res) => {
-  // Forward to /api
-  res.redirect(307, req.url);
+// Handle 404s
+app.use((req, res) => {
+  console.log(`404: ${req.method} ${req.url}`);
+  res.status(404).json({
+    status: 'error',
+    message: 'Endpoint not found',
+    path: req.url
+  });
 });
 
 // Start server if running directly
