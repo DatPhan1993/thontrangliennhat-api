@@ -1,5 +1,5 @@
 {
-  "name": "phunongbuondon-api",
+  "name": "thontrangliennhat-api",
   "version": "1.0.0",
   "description": "API server for Thôn Trang Liên Nhất website",
   "main": "server-express.js",
