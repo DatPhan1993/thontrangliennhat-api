@@ -1,27 +1,27 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "server-express.js",
+      "use": "@vercel/node"
     },
     {
-      "source": "/phunongbuondon-api/database.json",
-      "destination": "/phunongbuondon-api/database.json"
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     },
     {
-      "source": "/uploads/(.*)",
-      "destination": "/uploads/$1"
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server-express.js"
     },
     {
-      "source": "/images/(.*)",
-      "destination": "/images/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/server-express.js"
     }
   ],
   "headers": [
@@ -38,28 +38,18 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
+          "value": "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Accept, Authorization"
-        }
-      ]
-    },
-    {
-      "source": "/static/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "*"
         }
       ]
     }
   ],
   "env": {
-    "REACT_APP_BASE_URL": "https://api.thontrangliennhat.com/api",
-    "REACT_APP_UPLOAD_URL": "https://api.thontrangliennhat.com/uploads",
-    "REACT_APP_PUBLIC_URL": "https://thontrangliennhat.com",
-    "REACT_APP_API_URL": "https://api.thontrangliennhat.com/api"
+    "NODE_ENV": "production",
+    "HOST": "https://api.thontrangliennhat.com",
+    "PORT": "443"
   }
 } 
