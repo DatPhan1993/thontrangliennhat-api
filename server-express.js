@@ -8,6 +8,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'https://api.thontrangliennhat.com';
 
+// Route xử lý favicon để ngăn lỗi 404
+app.get('/favicon.ico', (req, res) => {
+  const faviconPath = path.join(__dirname, 'public', 'favicon.ico');
+  if (fs.existsSync(faviconPath)) {
+    return res.sendFile(faviconPath);
+  }
+  res.status(204).end(); // No content
+});
+
+app.get('/favicon.png', (req, res) => {
+  const faviconPath = path.join(__dirname, 'public', 'favicon.ico');
+  if (fs.existsSync(faviconPath)) {
+    return res.sendFile(faviconPath);
+  }
+  res.status(204).end(); // No content
+});
+
 // Define upload directory and ensure it exists
 const UPLOADS_DIR = path.join('/tmp', 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -228,6 +245,8 @@ app.use((req, res, next) => {
     }
   }
   
+  // Không gửi thông tin xác thực với yêu cầu có wildcard origin
+  res.header('Access-Control-Allow-Credentials', 'false');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
