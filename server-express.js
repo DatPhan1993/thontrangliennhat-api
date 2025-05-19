@@ -8,31 +8,30 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'https://api.thontrangliennhat.com';
 
-// Kích hoạt CORS cho tất cả các request
-app.use(cors({
-  origin: '*',  // Cho phép tất cả các domain để tránh lỗi CORS
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-  credentials: false,
-  exposedHeaders: ['Content-Length', 'Content-Type']
-}));
-
-// Middleware để xử lý OPTIONS request (CORS preflight)
-app.options('*', cors());
-
-// Đảm bảo CORS header được thiết lập cho mọi response
+// Remove all CORS restrictions completely
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'false');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
   
+  // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
   
   next();
 });
+
+// Also keep the standard CORS middleware with all origins allowed
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['*', 'Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
+}));
 
 // Express JSON middleware with error handling
 app.use(express.json({
@@ -224,21 +223,89 @@ if (fs.existsSync(buildImagesPath)) {
   app.use('/images/uploads', express.static(path.join(buildImagesPath, 'uploads')));
 }
 
-// Create placeholder image if it doesn't exist
-const placeholderImagePath = path.join(__dirname, 'public', 'images', 'placeholder.jpg');
-const placeholderDir = path.dirname(placeholderImagePath);
+// Create all necessary placeholder images
+const createPlaceholders = () => {
+  // Create base directories
+  const directories = [
+    path.join(__dirname, 'public', 'images'),
+    path.join(__dirname, 'public', 'images', 'uploads'),
+    path.join(__dirname, 'public', 'images', 'products'),
+    path.join(__dirname, 'images'),
+    path.join(__dirname, 'images', 'uploads'),
+    path.join(__dirname, 'images', 'products'),
+    path.join(__dirname, 'uploads'),
+    path.join('/tmp', 'uploads')
+  ];
+  
+  directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      console.log(`Creating directory: ${dir}`);
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+      } catch (error) {
+        console.error(`Error creating directory ${dir}:`, error);
+      }
+    }
+  });
+  
+  // Create placeholder images in each directory
+  const placeholderFiles = [
+    path.join(__dirname, 'public', 'images', 'placeholder.jpg'),
+    path.join(__dirname, 'public', 'images', 'placeholder.png'),
+    path.join(__dirname, 'images', 'placeholder.jpg'),
+    path.join(__dirname, 'images', 'placeholder.png')
+  ];
+  
+  // Base64 encoded placeholder images
+  // A better placeholder image (colored square with text)
+  const placeholderImage = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF4WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDI0LTA1LTE2VDE1OjM0OjA3KzA3IiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNC0wNS0xNlQxNTozNzozNSswNyIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNC0wNS0xNlQxNTozNzozNSswNyIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2NDhmYjZkMS0zOGM3LThjNGItODEz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', 'base64');
+  
+  placeholderFiles.forEach(file => {
+    if (!fs.existsSync(file)) {
+      console.log(`Creating placeholder image at: ${file}`);
+      try {
+        fs.writeFileSync(file, placeholderImage);
+      } catch (error) {
+        console.error(`Error creating placeholder image ${file}:`, error);
+      }
+    }
+  });
+  
+  // Also create some commonly requested images that are missing
+  const commonImageNames = [
+    'default-image.jpg',
+    'default-product.jpg',
+    'default-service.jpg',
+    'default-team.jpg',
+    'default-avatar.jpg',
+    'default.jpg',
+    'logo.png'
+  ];
+  
+  const imageDirectories = [
+    path.join(__dirname, 'public', 'images'),
+    path.join(__dirname, 'images'),
+    path.join(__dirname, 'public', 'images', 'uploads'),
+    path.join(__dirname, 'images', 'uploads')
+  ];
+  
+  imageDirectories.forEach(dir => {
+    commonImageNames.forEach(imgName => {
+      const imgPath = path.join(dir, imgName);
+      if (!fs.existsSync(imgPath)) {
+        console.log(`Creating common image: ${imgPath}`);
+        try {
+          fs.writeFileSync(imgPath, placeholderImage);
+        } catch (error) {
+          console.error(`Error creating common image ${imgPath}:`, error);
+        }
+      }
+    });
+  });
+};
 
-if (!fs.existsSync(placeholderDir)) {
-  console.log(`Creating placeholder image directory: ${placeholderDir}`);
-  fs.mkdirSync(placeholderDir, { recursive: true });
-}
-
-if (!fs.existsSync(placeholderImagePath)) {
-  console.log(`Creating default placeholder image at: ${placeholderImagePath}`);
-  // Creating a 1x1 transparent pixel in base64
-  const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
-  fs.writeFileSync(placeholderImagePath, transparentPixel);
-}
+// Create all placeholder images at startup
+createPlaceholders();
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -314,8 +381,8 @@ app.get('/api/parent-navs', (req, res) => {
     
     // Set CORS headers explicitly for this endpoint
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', '*');
     res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     // Pre-flight response for OPTIONS
@@ -323,30 +390,71 @@ app.get('/api/parent-navs', (req, res) => {
       return res.status(200).end();
     }
     
+    // Default navigation items if none exist
+    const defaultNavigation = [
+      {
+        id: 1,
+        title: "Trang chủ",
+        slug: "trang-chu",
+        position: 1
+      },
+      {
+        id: 2,
+        title: "Sản phẩm",
+        slug: "san-pham",
+        position: 2
+      },
+      {
+        id: 3,
+        title: "Dịch vụ",
+        slug: "dich-vu",
+        position: 3
+      },
+      {
+        id: 4,
+        title: "Trải nghiệm",
+        slug: "trai-nghiem",
+        position: 4
+      },
+      {
+        id: 5,
+        title: "Tin tức",
+        slug: "tin-tuc",
+        position: 5
+      },
+      {
+        id: 6,
+        title: "Liên hệ",
+        slug: "lien-he",
+        position: 6
+      }
+    ];
+    
     const db = getDatabase();
     
-    if (!db.navigation || !Array.isArray(db.navigation)) {
+    // Check if navigation array exists and has items
+    const hasValidNavigation = db.navigation && Array.isArray(db.navigation) && db.navigation.length > 0;
+    
+    // If no valid navigation, return default
+    if (!hasValidNavigation) {
       console.log('No navigation data found, returning default navigation');
       return res.json({
         statusCode: 200,
         message: 'Success',
-        data: [
-          {
-            id: 1,
-            title: "Trang chủ",
-            slug: "trang-chu",
-            position: 1
-          }
-        ]
+        data: defaultNavigation
       });
     }
     
+    // Create valid navigation items with all required fields
     const parentNavs = db.navigation.map(item => ({
-      id: item.id || 0,
-      title: item.title || '',
-      slug: item.slug || '',
+      id: item.id || Math.floor(Math.random() * 1000),
+      title: item.title || 'Navigation Item',
+      slug: item.slug || `nav-item-${item.id || Math.floor(Math.random() * 1000)}`,
       position: item.position || 0
     }));
+    
+    // Sort by position
+    parentNavs.sort((a, b) => a.position - b.position);
     
     res.json({
       statusCode: 200,
@@ -365,6 +473,24 @@ app.get('/api/parent-navs', (req, res) => {
           title: "Trang chủ",
           slug: "trang-chu",
           position: 1
+        },
+        {
+          id: 2,
+          title: "Sản phẩm",
+          slug: "san-pham",
+          position: 2
+        },
+        {
+          id: 3,
+          title: "Dịch vụ",
+          slug: "dich-vu",
+          position: 3
+        },
+        {
+          id: 4,
+          title: "Tin tức",
+          slug: "tin-tuc",
+          position: 4
         }
       ]
     });
@@ -694,8 +820,8 @@ app.get('/api/products', (req, res) => {
     
     // Set CORS headers explicitly for this endpoint
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', '*');
     res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     // Pre-flight response for OPTIONS
@@ -705,32 +831,97 @@ app.get('/api/products', (req, res) => {
     
     const db = getDatabase();
     
-    // Ensure products array exists and is valid
-    let products = [];
-    if (db && db.products && Array.isArray(db.products)) {
-      products = db.products;
-    } else {
-      // Default products if none exist
-      products = [
-        {
-          id: 1,
-          name: "Sản phẩm nông nghiệp",
-          slug: "san-pham-nong-nghiep",
-          summary: "Sản phẩm đặc trưng của Thôn Trang Liên Nhất",
-          content: "Sản phẩm chất lượng cao của địa phương",
-          images: ["/images/placeholder.jpg"],
-          child_nav_id: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      console.log('Products array not found or not an array, returning default products');
+    // Define default products
+    const defaultProducts = [
+      {
+        id: 1,
+        name: "Gạo hữu cơ địa phương",
+        slug: "gao-huu-co-dia-phuong",
+        summary: "Gạo hữu cơ chất lượng cao của Thôn Trang Liên Nhất",
+        content: "Sản phẩm gạo được trồng theo phương pháp hữu cơ, không sử dụng thuốc trừ sâu hóa học, an toàn cho sức khỏe người tiêu dùng.",
+        images: ["/images/placeholder.jpg"],
+        child_nav_id: 2,
+        categoryId: 2,
+        price: 35000,
+        discountPrice: 30000,
+        isFeatured: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: "Rau sạch địa phương",
+        slug: "rau-sach-dia-phuong",
+        summary: "Rau sạch được trồng tại Thôn Trang Liên Nhất",
+        content: "Rau được trồng theo quy trình an toàn, không thuốc trừ sâu độc hại, đảm bảo dinh dưỡng và an toàn cho người tiêu dùng.",
+        images: ["/images/placeholder.jpg"],
+        child_nav_id: 2,
+        categoryId: 2,
+        price: 15000,
+        discountPrice: 0,
+        isFeatured: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    // Check if products exist in database and are valid
+    let products = defaultProducts;
+    
+    if (db && db.products && Array.isArray(db.products) && db.products.length > 0) {
+      // Use database products if available
+      products = db.products.map(product => ({
+        id: product.id || Math.floor(Math.random() * 1000),
+        name: product.name || "Sản phẩm",
+        slug: product.slug || (product.name ? product.name.toLowerCase().replace(/\s+/g, '-') : `san-pham-${product.id || Math.floor(Math.random() * 1000)}`),
+        summary: product.summary || "",
+        content: product.content || "",
+        description: product.description || product.content || "",
+        images: Array.isArray(product.images) ? product.images : ["/images/placeholder.jpg"],
+        image: product.image || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : "/images/placeholder.jpg"),
+        child_nav_id: product.child_nav_id || product.categoryId || 2,
+        categoryId: product.categoryId || product.child_nav_id || 2,
+        price: parseFloat(product.price) || 0,
+        discountPrice: parseFloat(product.discountPrice) || 0,
+        isFeatured: product.isFeatured === true || product.isFeatured === 'true' || false,
+        created_at: product.created_at || product.createdAt || new Date().toISOString(),
+        updated_at: product.updated_at || product.updatedAt || new Date().toISOString(),
+        createdAt: product.createdAt || product.created_at || new Date().toISOString(),
+        updatedAt: product.updatedAt || product.updated_at || new Date().toISOString()
+      }));
+    }
+    
+    // Apply any query filters
+    const { category, featured, limit } = req.query;
+    
+    let filteredProducts = products;
+    
+    // Filter by category/child_nav_id if specified
+    if (category) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.categoryId == category || 
+        product.child_nav_id == category
+      );
+    }
+    
+    // Filter by featured status if specified
+    if (featured === 'true') {
+      filteredProducts = filteredProducts.filter(product => product.isFeatured);
+    }
+    
+    // Apply limit if specified
+    if (limit) {
+      filteredProducts = filteredProducts.slice(0, parseInt(limit));
     }
     
     res.json({
       statusCode: 200,
       message: 'Success',
-      data: products
+      data: filteredProducts
     });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -741,14 +932,20 @@ app.get('/api/products', (req, res) => {
       data: [
         {
           id: 1,
-          name: "Sản phẩm nông nghiệp",
-          slug: "san-pham-nong-nghiep",
-          summary: "Sản phẩm đặc trưng của Thôn Trang Liên Nhất",
-          content: "Sản phẩm chất lượng cao của địa phương",
+          name: "Gạo hữu cơ địa phương",
+          slug: "gao-huu-co-dia-phuong",
+          summary: "Gạo hữu cơ chất lượng cao của Thôn Trang Liên Nhất",
+          content: "Sản phẩm gạo được trồng theo phương pháp hữu cơ, không sử dụng thuốc trừ sâu hóa học, an toàn cho sức khỏe người tiêu dùng.",
           images: ["/images/placeholder.jpg"],
-          child_nav_id: 1,
+          child_nav_id: 2,
+          categoryId: 2,
+          price: 35000,
+          discountPrice: 30000,
+          isFeatured: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
       ]
     });
@@ -1052,8 +1249,8 @@ app.get('/api/services', (req, res) => {
     
     // Set CORS headers explicitly for this endpoint
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', '*');
     res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     // Pre-flight response for OPTIONS
@@ -1063,27 +1260,63 @@ app.get('/api/services', (req, res) => {
     
     const db = getDatabase();
     
-    // Ensure services array exists
-    let services = [];
-    if (db && db.services && Array.isArray(db.services)) {
-      services = db.services;
-    } else {
-      // Default services if none exist
-      services = [
-        {
-          id: 1,
-          name: "Dịch vụ du lịch",
-          title: "Dịch vụ du lịch",
-          slug: "dich-vu-du-lich",
-          summary: "Dịch vụ tham quan du lịch tại Thôn Trang Liên Nhất",
-          content: "Cung cấp dịch vụ tham quan du lịch tại địa phương",
-          description: "Cung cấp dịch vụ tham quan du lịch tại địa phương",
-          images: ["/images/placeholder.jpg"],
-          image: "/images/placeholder.jpg",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+    // Define default services
+    const defaultServices = [
+      {
+        id: 1,
+        name: "Dịch vụ du lịch sinh thái",
+        title: "Dịch vụ du lịch sinh thái",
+        slug: "dich-vu-du-lich-sinh-thai",
+        summary: "Tham quan và trải nghiệm không gian sinh thái tại Thôn Trang Liên Nhất",
+        content: "Cung cấp dịch vụ tham quan du lịch sinh thái tại địa phương với các hoạt động gắn liền với thiên nhiên và nông nghiệp.",
+        description: "Cung cấp dịch vụ tham quan du lịch sinh thái tại địa phương với các hoạt động gắn liền với thiên nhiên và nông nghiệp.",
+        images: ["/images/placeholder.jpg"],
+        image: "/images/placeholder.jpg",
+        child_nav_id: 3,
+        categoryId: 3,
+        isFeatured: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: "Dịch vụ ẩm thực đặc sản",
+        title: "Dịch vụ ẩm thực đặc sản",
+        slug: "dich-vu-am-thuc-dac-san",
+        summary: "Thưởng thức đặc sản địa phương tại Thôn Trang Liên Nhất",
+        content: "Cung cấp dịch vụ ẩm thực với các món ăn đặc sản được chế biến từ nguyên liệu sạch, tươi ngon của địa phương.",
+        description: "Cung cấp dịch vụ ẩm thực với các món ăn đặc sản được chế biến từ nguyên liệu sạch, tươi ngon của địa phương.",
+        images: ["/images/placeholder.jpg"],
+        image: "/images/placeholder.jpg",
+        child_nav_id: 3,
+        categoryId: 3,
+        isFeatured: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    // Check if services exist in database and are valid
+    let services = defaultServices;
+    
+    if (db && db.services && Array.isArray(db.services) && db.services.length > 0) {
+      // Map services to ensure all required fields exist
+      services = db.services.map(service => ({
+        id: service.id || Math.floor(Math.random() * 1000),
+        name: service.name || "Dịch vụ",
+        title: service.title || service.name || "Dịch vụ",
+        slug: service.slug || (service.name ? service.name.toLowerCase().replace(/\s+/g, '-') : `dich-vu-${service.id || Math.floor(Math.random() * 1000)}`),
+        summary: service.summary || "",
+        content: service.content || "",
+        description: service.description || service.content || "",
+        images: Array.isArray(service.images) ? service.images : ["/images/placeholder.jpg"],
+        image: service.image || (Array.isArray(service.images) && service.images.length > 0 ? service.images[0] : "/images/placeholder.jpg"),
+        child_nav_id: service.child_nav_id || service.categoryId || 3,
+        categoryId: service.categoryId || service.child_nav_id || 3,
+        isFeatured: service.isFeatured === true || service.isFeatured === 'true' || false,
+        createdAt: service.createdAt || service.created_at || new Date().toISOString(),
+        updatedAt: service.updatedAt || service.updated_at || new Date().toISOString()
+      }));
     }
     
     res.json({
@@ -1100,14 +1333,17 @@ app.get('/api/services', (req, res) => {
       data: [
         {
           id: 1,
-          name: "Dịch vụ du lịch",
-          title: "Dịch vụ du lịch",
-          slug: "dich-vu-du-lich",
-          summary: "Dịch vụ tham quan du lịch tại Thôn Trang Liên Nhất",
-          content: "Cung cấp dịch vụ tham quan du lịch tại địa phương",
-          description: "Cung cấp dịch vụ tham quan du lịch tại địa phương",
+          name: "Dịch vụ du lịch sinh thái",
+          title: "Dịch vụ du lịch sinh thái",
+          slug: "dich-vu-du-lich-sinh-thai",
+          summary: "Tham quan và trải nghiệm không gian sinh thái tại Thôn Trang Liên Nhất",
+          content: "Cung cấp dịch vụ tham quan du lịch sinh thái tại địa phương với các hoạt động gắn liền với thiên nhiên và nông nghiệp.",
+          description: "Cung cấp dịch vụ tham quan du lịch sinh thái tại địa phương với các hoạt động gắn liền với thiên nhiên và nông nghiệp.",
           images: ["/images/placeholder.jpg"],
           image: "/images/placeholder.jpg",
+          child_nav_id: 3,
+          categoryId: 3,
+          isFeatured: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
@@ -1502,8 +1738,57 @@ app.get('/api/news', (req, res) => {
 
 // API endpoint cho team
 app.get('/api/team', (req, res) => {
-  const db = getDatabase();
-  res.json(db.team);
+  try {
+    console.log(`GET /api/team - Fetching team members (legacy endpoint)`);
+    
+    // Set CORS headers explicitly for this endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    
+    const db = getDatabase();
+    
+    // Ensure the team array exists and is valid
+    const defaultTeam = [
+      {
+        id: 1,
+        name: "Nguyễn Hữu Quyền",
+        position: "Giám đốc HTX",
+        avatar: "/images/placeholder.jpg",
+        image: "/images/placeholder.jpg",
+        description: "Giám đốc HTX"
+      },
+      {
+        id: 2,
+        name: "Võ Tá Quỳnh",
+        position: "Quản Lý",
+        avatar: "/images/placeholder.jpg",
+        image: "/images/placeholder.jpg",
+        description: "Quản lý HTX"
+      }
+    ];
+    
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: Array.isArray(db.team) ? db.team : defaultTeam
+    });
+  } catch (error) {
+    console.error('Error fetching teams (legacy endpoint):', error);
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: [
+        {
+          id: 1,
+          name: "Nguyễn Hữu Quyền",
+          position: "Giám đốc HTX",
+          avatar: "/images/placeholder.jpg",
+          image: "/images/placeholder.jpg",
+          description: "Giám đốc HTX"
+        }
+      ]
+    });
+  }
 });
 
 // Teams API endpoint (to match frontend calls to /api/teams)
@@ -1513,8 +1798,8 @@ app.get('/api/teams', (req, res) => {
     
     // Set CORS headers explicitly for this endpoint
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', '*');
     res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
     // Pre-flight response for OPTIONS
@@ -1523,41 +1808,50 @@ app.get('/api/teams', (req, res) => {
     }
     
     const db = getDatabase();
-    let teams = [];
     
-    // Safely access team data
-    if (db && db.team && Array.isArray(db.team)) {
-      teams = db.team;
-    } else {
-      // Use default team data if none exists
-      teams = [
-        {
-          id: 1,
-          name: "Nguyễn Hữu Quyền",
-          position: "Giám đốc HTX",
-          avatar: "/images/placeholder.jpg",
-          image: "/images/placeholder.jpg",
-          description: "Giám đốc HTX",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 2,
-          name: "Võ Tá Quỳnh",
-          position: "Quản Lý",
-          avatar: "/images/placeholder.jpg",
-          image: "/images/placeholder.jpg",
-          description: "Quản lý HTX",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-    }
+    // Always provide default team members
+    const defaultTeam = [
+      {
+        id: 1,
+        name: "Nguyễn Hữu Quyền",
+        position: "Giám đốc HTX",
+        avatar: "/images/placeholder.jpg",
+        image: "/images/placeholder.jpg",
+        description: "Giám đốc HTX",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: "Võ Tá Quỳnh",
+        position: "Quản Lý",
+        avatar: "/images/placeholder.jpg",
+        image: "/images/placeholder.jpg",
+        description: "Quản lý HTX",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    // Use db.team if it exists and is an array with elements, otherwise use default team
+    const teams = (db.team && Array.isArray(db.team) && db.team.length > 0) ? db.team : defaultTeam;
+    
+    // Ensure all team members have required fields
+    const validTeams = teams.map(member => ({
+      id: member.id || Math.floor(Math.random() * 1000),
+      name: member.name || "Team Member",
+      position: member.position || "Member",
+      avatar: member.avatar || "/images/placeholder.jpg",
+      image: member.image || "/images/placeholder.jpg",
+      description: member.description || "",
+      createdAt: member.createdAt || new Date().toISOString(),
+      updatedAt: member.updatedAt || new Date().toISOString()
+    }));
     
     res.json({
       statusCode: 200,
       message: 'Success',
-      data: teams
+      data: validTeams
     });
   } catch (error) {
     console.error('Error fetching teams:', error);
@@ -3695,85 +3989,102 @@ const getDatabase = () => {
     : path.join(__dirname, 'database.json');
   
   try {
+    let db = {};
+    
     if (fs.existsSync(dbPath)) {
-      const data = fs.readFileSync(dbPath, 'utf8');
       try {
-        const db = JSON.parse(data);
-        
-        // Ensure all essential collections exist
-        db.products = db.products || [];
-        db.services = db.services || [];
-        db.experiences = db.experiences || [];
-        db.team = db.team || [];
-        db.navigation = db.navigation || [];
-        db.categories = db.categories || [];
-        db.users = db.users || [];
-        db.contacts = db.contacts || [];
-        db.news = db.news || [];
-        db.images = db.images || [];
-        db.videos = db.videos || [];
-        
-        return db;
+        const data = fs.readFileSync(dbPath, 'utf8');
+        db = JSON.parse(data);
+        console.log('Successfully loaded database from', dbPath);
       } catch (parseError) {
         console.error(`Error parsing database JSON: ${parseError.message}`);
-        return createDefaultDatabase();
+        console.error('Creating new default database due to parse error');
+        db = {};
       }
     } else {
       console.log(`Database file not found at ${dbPath}, creating new one with default data`);
-      const initialData = createDefaultDatabase();
-      try {
-        fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf8');
-      } catch (writeError) {
-        console.error(`Error writing initial database: ${writeError.message}`);
-      }
-      return initialData;
     }
-  } catch (error) {
-    console.error(`Error reading database: ${error.message}`);
-    console.error(`Returning default empty database structure`);
     
-    // Return empty default structure if there's an error
-    return createDefaultDatabase();
+    // Ensure all essential collections exist and are arrays
+    db.products = Array.isArray(db.products) ? db.products : [];
+    db.services = Array.isArray(db.services) ? db.services : [];
+    db.experiences = Array.isArray(db.experiences) ? db.experiences : [];
+    db.team = Array.isArray(db.team) ? db.team : [];
+    db.news = Array.isArray(db.news) ? db.news : [];
+    db.images = Array.isArray(db.images) ? db.images : [];
+    db.videos = Array.isArray(db.videos) ? db.videos : [];
+    db.contacts = Array.isArray(db.contacts) ? db.contacts : [];
+    db.categories = Array.isArray(db.categories) ? db.categories : [];
+    db.users = Array.isArray(db.users) ? db.users : [];
+    
+    // Ensure navigation structure is valid
+    if (!db.navigation || !Array.isArray(db.navigation) || db.navigation.length === 0) {
+      db.navigation = [
+        {
+          id: 1,
+          title: "Trang chủ",
+          slug: "trang-chu",
+          position: 1,
+          children: []
+        }
+      ];
+    }
+    
+    // Ensure each navigation item has a children array
+    db.navigation.forEach(item => {
+      if (!item.children || !Array.isArray(item.children)) {
+        item.children = [];
+      }
+    });
+    
+    // Write updated database if created or fixed
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+    } catch (writeError) {
+      console.error(`Warning: Error writing updated database: ${writeError.message}`);
+    }
+    
+    return db;
+  } catch (error) {
+    console.error(`Critical error reading database: ${error.message}`);
+    
+    // Return default database structure with essential collections
+    return { 
+      products: [],
+      services: [],
+      experiences: [],
+      team: [
+        {
+          id: 1,
+          name: "Default Team Member",
+          position: "Member",
+          avatar: "/images/placeholder.jpg",
+          image: "/images/placeholder.jpg",
+          description: "Default team member when database is unavailable",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ],
+      navigation: [
+        {
+          id: 1,
+          title: "Trang chủ",
+          slug: "trang-chu",
+          position: 1,
+          children: []
+        }
+      ],
+      categories: [],
+      users: [],
+      contacts: [],
+      news: [],
+      images: [],
+      videos: []
+    };
   }
 };
 
-// Helper function to create a default database structure
-const createDefaultDatabase = () => {
-  return { 
-    products: [],
-    services: [],
-    experiences: [],
-    team: [
-      {
-        id: 1,
-        name: "Default Team Member",
-        position: "Member",
-        avatar: "/images/placeholder.jpg",
-        image: "/images/placeholder.jpg",
-        description: "Default team member when database is unavailable",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ],
-    navigation: [
-      {
-        id: 1,
-        title: "Trang chủ",
-        slug: "trang-chu",
-        position: 1,
-        children: []
-      }
-    ],
-    categories: [],
-    users: [],
-    contacts: [],
-    news: [],
-    images: [],
-    videos: []
-  };
-};
-
-// Write database function
+// Enhanced database writing function with better error handling
 const writeDatabase = (db) => {
   // For Vercel, use tmp directory if in production
   const dbPath = process.env.NODE_ENV === 'production' 
@@ -3787,9 +4098,36 @@ const writeDatabase = (db) => {
       return false;
     }
     
+    // Ensure all collections are arrays to prevent errors
+    const safeDb = { ...db };
+    
+    safeDb.products = Array.isArray(db.products) ? db.products : [];
+    safeDb.services = Array.isArray(db.services) ? db.services : [];
+    safeDb.experiences = Array.isArray(db.experiences) ? db.experiences : [];
+    safeDb.team = Array.isArray(db.team) ? db.team : [];
+    safeDb.news = Array.isArray(db.news) ? db.news : [];
+    safeDb.images = Array.isArray(db.images) ? db.images : [];
+    safeDb.videos = Array.isArray(db.videos) ? db.videos : [];
+    safeDb.contacts = Array.isArray(db.contacts) ? db.contacts : [];
+    safeDb.categories = Array.isArray(db.categories) ? db.categories : [];
+    safeDb.users = Array.isArray(db.users) ? db.users : [];
+    
+    // Ensure navigation structure is valid
+    if (!safeDb.navigation || !Array.isArray(safeDb.navigation) || safeDb.navigation.length === 0) {
+      safeDb.navigation = [
+        {
+          id: 1,
+          title: "Trang chủ",
+          slug: "trang-chu",
+          position: 1,
+          children: []
+        }
+      ];
+    }
+    
     // Make sure we stringify cleanly
     try {
-      const dbString = JSON.stringify(db, null, 2);
+      const dbString = JSON.stringify(safeDb, null, 2);
       fs.writeFileSync(dbPath, dbString, 'utf8');
       console.log(`Database written to ${dbPath}`);
       
