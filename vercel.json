@@ -16,10 +16,6 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server-express.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "/server-express.js"
     }
@@ -28,10 +24,6 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        },
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
@@ -43,6 +35,10 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "*"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
         }
       ]
     }
@@ -50,6 +46,6 @@
   "env": {
     "NODE_ENV": "production",
     "HOST": "https://api.thontrangliennhat.com",
-    "PORT": "443"
+    "PORT": "3000"
   }
 } 
