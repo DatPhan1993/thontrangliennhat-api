@@ -62,7 +62,16 @@ const createImages = () => {
     'image5.36d1502e6723e74d0630.jpg',
     'image6.0d67d88125ca5c85a07d.jpg',
     'image7.e1de7d2499b9cb0fdcd3.jpg',
-    'image8.be2720cfe141c8a98bc3.jpg'
+    'image8.be2720cfe141c8a98bc3.jpg',
+    // New timestamp patterns from latest screenshots
+    '1747711777614-639500359.jpg',
+    '1747711777614-118603841.jpg',
+    '1747711777614-970349078.jpg',
+    '1747711783388-639500359.jpg',
+    '1747711783397-639500359.jpg',
+    '1747711783388-118603841.jpg',
+    '1747711783388-970349078.jpg',
+    'image3.01bcd0e694af190a8c53.jpg'
   ];
   
   // All image names to create

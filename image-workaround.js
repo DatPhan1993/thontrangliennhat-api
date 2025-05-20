@@ -156,6 +156,14 @@ imageWorkaroundRouter.get(/\/images\/\d+.*\.jpg/, (req, res) => {
   res.send(createPlaceholderImage());
 });
 
+// Handler for any image paths with numeric patterns (10+ digits) that might be timestamps
+imageWorkaroundRouter.get(/\/images\/.*\d{10,}.*\.(jpg|jpeg|png|gif)/, (req, res) => {
+  console.log(`Numeric pattern image handler: ${req.path}`);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.type('image/jpeg');
+  res.send(createPlaceholderImage());
+});
+
 // Catch all handler for any locahost references
 imageWorkaroundRouter.get(/\/localhost:3001\/.*/, (req, res) => {
   console.log(`Localhost reference caught: ${req.path}`);
