@@ -26,6 +26,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import our custom error handling middleware
+const { errorHandler, notFoundHandler, corsErrorHandler } = require('./error-middleware');
+
 // Import API routes
 const apiRoutes = require('./api/index.js');
 
@@ -48,15 +51,14 @@ app.get('/', (req, res) => {
   });
 });
 
-// Handle 404s
-app.use((req, res) => {
-  console.log(`404: ${req.method} ${req.url}`);
-  res.status(404).json({
-    status: 'error',
-    message: 'Endpoint not found',
-    path: req.url
-  });
-});
+// Error handling for 404s (must be before the error handlers)
+app.use(notFoundHandler);
+
+// Apply CORS error handling
+app.use(corsErrorHandler);
+
+// Apply global error handling
+app.use(errorHandler);
 
 // Start server if running directly
 if (require.main === module) {

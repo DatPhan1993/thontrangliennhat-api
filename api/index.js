@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const router = express.Router();
+const { ERROR_TYPES } = require('../error-middleware');
 
 // Enable CORS with specific origin
 router.use(cors({
@@ -244,17 +245,27 @@ const mockData = {
   ]
 };
 
-// API endpoints handler with appropriate response format
+// API endpoints handler with appropriate response format and error handling
 const handleApiResponse = (res, data) => {
-  res.json({
-    statusCode: 200,
-    message: 'Success',
-    data: data
-  });
+  try {
+    res.json({
+      statusCode: 200,
+      message: 'Success',
+      data: data || []
+    });
+  } catch (error) {
+    console.error('Error in API response:', error);
+    next(error);
+  }
+};
+
+// Helper function to wrap route handlers with try-catch for error handling
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };
 
 // API endpoint
-router.get('/', (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
   res.json({
     statusCode: 200,
     message: 'API is operational',
@@ -270,13 +281,13 @@ router.get('/', (req, res) => {
       '/api/images'
     ]
   });
-});
+}));
 
 // Products endpoint
-router.get('/products', (req, res) => {
+router.get('/products', asyncHandler(async (req, res) => {
   console.log('GET /api/products - Serving product data');
   handleApiResponse(res, mockData.products);
-});
+}));
 
 // Services endpoint
 router.get('/services', (req, res) => {
@@ -323,7 +334,7 @@ router.get('/images', (req, res) => {
 });
 
 // Image by ID endpoint
-router.get('/images/:id', (req, res) => {
+router.get('/images/:id', asyncHandler(async (req, res) => {
   const id = parseInt(req.params.id);
   console.log(`GET /api/images/${id} - Serving specific image data`);
   
@@ -331,13 +342,11 @@ router.get('/images/:id', (req, res) => {
   if (image) {
     handleApiResponse(res, image);
   } else {
-    res.status(404).json({
-      statusCode: 404,
-      message: 'Image not found',
-      data: null
-    });
+    const error = new Error('Image not found');
+    error.type = ERROR_TYPES.NOT_FOUND;
+    throw error;
   }
-});
+}));
 
 // Experiences endpoint
 router.get('/experiences', (req, res) => {

@@ -8,6 +8,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'https://api.thontrangliennhat.com';
 
+// Enhanced image error handling middleware
+app.use((req, res, next) => {
+  // Only apply to image requests
+  if (req.path.match(/\.(jpg|jpeg|png|gif|webp|ico)$/i) || 
+      req.path.startsWith('/images/') || 
+      req.path.startsWith('/uploads/')) {
+    
+    // Set CORS headers for all image responses
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    
+    // Add error handling for the request
+    res.on('error', (err) => {
+      console.error(`Error serving image ${req.path}:`, err);
+      // Don't crash the server on image errors
+      res.status(404).send('Image not found');
+    });
+  }
+  next();
+});
+
 // Remove all CORS restrictions completely
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -310,6 +331,196 @@ createPlaceholders();
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Comprehensive image directories setup
+const imageDirs = [
+  { route: '/images', path: path.join(__dirname, 'images') },
+  { route: '/uploads', path: path.join(__dirname, 'uploads') },
+  { route: '/images/uploads', path: path.join(__dirname, 'images', 'uploads') },
+  { route: '/images', path: path.join('/tmp', 'uploads') },  // For Vercel
+  { route: '/uploads', path: path.join('/tmp', 'uploads') }, // For Vercel
+  { route: '/images/uploads', path: path.join('/tmp', 'uploads') }, // For Vercel
+  { route: '/public/images', path: path.join(__dirname, 'public', 'images') },
+  { route: '/public/uploads', path: path.join(__dirname, 'public', 'uploads') }
+];
+
+// Register all image directories
+imageDirs.forEach(({ route, path: dirPath }) => {
+  // Check if directory exists before serving
+  try {
+    if (fs.existsSync(dirPath)) {
+      console.log(`Serving ${route} from ${dirPath}`);
+      app.use(route, express.static(dirPath, {
+        maxAge: '1d', // Cache for 1 day
+        fallthrough: false // Return 404 if file not found
+      }));
+    } else {
+      console.log(`Directory does not exist: ${dirPath}, creating it`);
+      fs.mkdirSync(dirPath, { recursive: true });
+      app.use(route, express.static(dirPath, {
+        maxAge: '1d',
+        fallthrough: false
+      }));
+    }
+  } catch (error) {
+    console.error(`Error setting up static directory ${route} -> ${dirPath}:`, error);
+  }
+});
+
+// Fallback route for images that tries all possible paths
+app.get('*.(jpg|jpeg|png|gif|webp|ico)', (req, res) => {
+  const fileName = req.path.split('/').pop();
+  console.log(`Trying to find image: ${fileName}`);
+  
+  // List of places to look for the image
+  const possiblePaths = [
+    path.join(__dirname, 'images', fileName),
+    path.join(__dirname, 'uploads', fileName),
+    path.join(__dirname, 'public', 'images', fileName),
+    path.join(__dirname, 'public', 'uploads', fileName),
+    path.join('/tmp', 'uploads', fileName)
+  ];
+  
+  // Try each path
+  for (const imagePath of possiblePaths) {
+    if (fs.existsSync(imagePath)) {
+      return res.sendFile(imagePath);
+    }
+  }
+  
+  // Image not found in any location
+  console.log(`Image not found: ${fileName}`);
+  res.status(404).send('Image not found');
+});
+
+// Serve uploaded images
+app.use('/images', express.static(path.join(__dirname, 'images')));
+// Serve uploads directly
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+console.log('Serving static files from:', path.join(__dirname, 'public'));
+console.log('Serving images from:', path.join(__dirname, 'images'));
+console.log('Serving uploads from:', path.join(__dirname, 'uploads'));
+
+// Ensure all image paths are accessible - add additional image directory mappings
+app.use('/images/products', express.static(path.join(__dirname, 'images', 'products')));
+app.use('/images/products', express.static(path.join(__dirname, 'public', 'images', 'products')));
+app.use('/images/uploads', express.static(path.join(__dirname, 'images', 'uploads')));
+app.use('/images/uploads', express.static(path.join(__dirname, 'public', 'images', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'images', 'uploads')));
+app.use('/public/images/products', express.static(path.join(__dirname, 'public', 'images', 'products')));
+app.use('/public/images/uploads', express.static(path.join(__dirname, 'public', 'images', 'uploads')));
+
+// Also serve parent directory images if they exist
+const parentImagesPath = path.resolve(__dirname, '..', 'images');
+if (fs.existsSync(parentImagesPath)) {
+  console.log('Serving parent directory images from:', parentImagesPath);
+  app.use('/images', express.static(parentImagesPath));
+  app.use('/images/products', express.static(path.join(parentImagesPath, 'products')));
+  app.use('/images/uploads', express.static(path.join(parentImagesPath, 'uploads')));
+}
+
+// Serve images from the parent uploads directory if it exists
+const parentUploadsPath = path.resolve(__dirname, '..', 'uploads');
+if (fs.existsSync(parentUploadsPath)) {
+  console.log('Serving parent directory uploads from:', parentUploadsPath);
+  app.use('/uploads', express.static(parentUploadsPath));
+}
+
+// Serve images from build directory if it exists (for production builds)
+const buildImagesPath = path.resolve(__dirname, '..', 'build', 'images');
+if (fs.existsSync(buildImagesPath)) {
+  console.log('Serving build directory images from:', buildImagesPath);
+  app.use('/images', express.static(buildImagesPath));
+  app.use('/images/uploads', express.static(path.join(buildImagesPath, 'uploads')));
+}
+
+// Create all necessary placeholder images
+const createPlaceholders = () => {
+  // Create base directories
+  const directories = [
+    path.join(__dirname, 'public', 'images'),
+    path.join(__dirname, 'public', 'images', 'uploads'),
+    path.join(__dirname, 'public', 'images', 'products'),
+    path.join(__dirname, 'images'),
+    path.join(__dirname, 'images', 'uploads'),
+    path.join(__dirname, 'images', 'products'),
+    path.join(__dirname, 'uploads'),
+    path.join('/tmp', 'uploads')
+  ];
+  
+  directories.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+      console.log(`Creating directory: ${dir}`);
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+      } catch (error) {
+        console.error(`Error creating directory ${dir}:`, error);
+      }
+    }
+  });
+  
+  // Create placeholder images in each directory
+  const placeholderFiles = [
+    path.join(__dirname, 'public', 'images', 'placeholder.jpg'),
+    path.join(__dirname, 'public', 'images', 'placeholder.png'),
+    path.join(__dirname, 'images', 'placeholder.jpg'),
+    path.join(__dirname, 'images', 'placeholder.png')
+  ];
+  
+  // Base64 encoded placeholder images
+  // A better placeholder image (colored square with text)
+  const placeholderImage = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF4WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDI0LTA1LTE2VDE1OjM0OjA3KzA3IiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNC0wNS0xNlQxNTozNzozNSswNyIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNC0wNS0xNlQxNTozNzozNSswNyIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo2NDhmYjZkMS0zOGM3LThjNGItODEz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', 'base64');
+  
+  placeholderFiles.forEach(file => {
+    if (!fs.existsSync(file)) {
+      console.log(`Creating placeholder image at: ${file}`);
+      try {
+        fs.writeFileSync(file, placeholderImage);
+      } catch (error) {
+        console.error(`Error creating placeholder image ${file}:`, error);
+      }
+    }
+  });
+  
+  // Also create some commonly requested images that are missing
+  const commonImageNames = [
+    'default-image.jpg',
+    'default-product.jpg',
+    'default-service.jpg',
+    'default-team.jpg',
+    'default-avatar.jpg',
+    'default.jpg',
+    'logo.png'
+  ];
+  
+  const imageDirectories = [
+    path.join(__dirname, 'public', 'images'),
+    path.join(__dirname, 'images'),
+    path.join(__dirname, 'public', 'images', 'uploads'),
+    path.join(__dirname, 'images', 'uploads')
+  ];
+  
+  imageDirectories.forEach(dir => {
+    commonImageNames.forEach(imgName => {
+      const imgPath = path.join(dir, imgName);
+      if (!fs.existsSync(imgPath)) {
+        console.log(`Creating common image: ${imgPath}`);
+        try {
+          fs.writeFileSync(imgPath, placeholderImage);
+        } catch (error) {
+          console.error(`Error creating common image ${imgPath}:`, error);
+        }
+      }
+    });
+  });
+};
+
+// Create all placeholder images at startup
+createPlaceholders();
+
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Đảm bảo thư mục uploads có thể truy cập được
 app.use('/images/uploads', express.static(path.join(__dirname, 'images', 'uploads')));
 app.use('/images/uploads', express.static(path.join(__dirname, 'public', 'images', 'uploads')));
@@ -323,8 +534,8 @@ app.use((req, res, next) => {
   // Only intercept image requests
   if (req.path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     // Set CORS headers for all image responses
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
     
     // Determine appropriate content type
     let contentType = 'image/jpeg';
@@ -336,28 +547,28 @@ app.use((req, res, next) => {
     
     // Log image request
     console.log(`Image requested: ${req.path}`);
-    
-    // Check multiple possible locations
-    const filename = path.basename(req.path);
-    const possiblePaths = [
+      
+      // Check multiple possible locations
+      const filename = path.basename(req.path);
+      const possiblePaths = [
       path.join(__dirname, req.path), // Direct path
-      path.join(__dirname, 'images', 'uploads', filename),
-      path.join(__dirname, 'uploads', filename),
-      path.join(__dirname, 'public', 'images', 'uploads', filename),
+        path.join(__dirname, 'images', 'uploads', filename),
+        path.join(__dirname, 'uploads', filename),
+        path.join(__dirname, 'public', 'images', 'uploads', filename),
       path.join('/tmp', 'uploads', filename), // For Vercel deployment
-      path.join(__dirname, '..', 'uploads', filename),
-      path.join(__dirname, '..', 'images', 'uploads', filename),
+        path.join(__dirname, '..', 'uploads', filename),
+        path.join(__dirname, '..', 'images', 'uploads', filename),
       path.join(__dirname, '..', 'public', 'images', 'uploads', filename),
       path.join(__dirname, '..', 'build', 'images', 'uploads', filename)
-    ];
-    
-    // Try each path
-    for (const filePath of possiblePaths) {
-      if (fs.existsSync(filePath)) {
+      ];
+      
+      // Try each path
+      for (const filePath of possiblePaths) {
+        if (fs.existsSync(filePath)) {
         console.log(`Found image at: ${filePath}`);
-        return res.sendFile(filePath);
+          return res.sendFile(filePath);
+        }
       }
-    }
     
     // If image not found in paths, check if it's in upload path format
     if (req.path.includes('/api/') && req.path.includes('/uploads/')) {
@@ -365,8 +576,8 @@ app.use((req, res, next) => {
       console.log(`Trying corrected path: ${correctPath}`);
       return res.redirect(correctPath);
     }
-    
-    // If not found, use default image
+      
+      // If not found, use default image
     console.log(`Image not found: ${req.path}, using placeholder image`);
     return res.sendFile(placeholderImagePath);
   }
@@ -513,13 +724,13 @@ app.get('/api/parent-navs/all-with-child', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     if (!db.navigation || !Array.isArray(db.navigation)) {
       console.log('No navigation data found, returning default navigation');
       return res.json({
-        statusCode: 200,
-        message: 'Success',
+    statusCode: 200,
+    message: 'Success',
         data: [
           {
             id: 1,
@@ -536,11 +747,11 @@ app.get('/api/parent-navs/all-with-child', (req, res) => {
     const validNavigation = db.navigation.map(nav => ({
       ...nav,
       children: Array.isArray(nav.children) ? nav.children : []
-    }));
-    
-    res.json({
-      statusCode: 200,
-      message: 'Success',
+  }));
+  
+  res.json({
+    statusCode: 200,
+    message: 'Success',
       data: validNavigation
     });
   } catch (error) {
@@ -565,7 +776,7 @@ app.get('/api/parent-navs/all-with-child', (req, res) => {
 // Endpoint for fetching categories by parent nav slug
 app.get('/api/parent-navs/slug/:slug', (req, res) => {
   try {
-    const slug = req.params.slug;
+  const slug = req.params.slug;
     console.log(`GET /api/parent-navs/slug/${slug} - Fetching categories by slug`);
     
     // Set CORS headers explicitly for this endpoint
@@ -579,7 +790,7 @@ app.get('/api/parent-navs/slug/:slug', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Special handling for specific slugs that are commonly used
     if (slug === 'dich-vu' || slug === 'san-pham' || slug === 'trai-nghiem') {
@@ -620,18 +831,18 @@ app.get('/api/parent-navs/slug/:slug', (req, res) => {
       });
     }
     
-    const parentNav = db.navigation.find(nav => nav.slug === slug);
-    
-    if (parentNav) {
+  const parentNav = db.navigation.find(nav => nav.slug === slug);
+  
+  if (parentNav) {
       // Ensure children array exists and is valid
       const children = Array.isArray(parentNav.children) ? parentNav.children : [];
       
-      res.json({
-        statusCode: 200,
-        message: 'Success',
+    res.json({
+      statusCode: 200,
+      message: 'Success',
         data: children
-      });
-    } else {
+    });
+  } else {
       // Return default categories instead of empty array
       console.log(`No parent navigation found with slug: ${slug}, returning default categories`);
       res.json({
@@ -691,7 +902,7 @@ app.get('/api/navigation-links', (req, res) => {
 
 app.get('/api/child-navs', (req, res) => {
   try {
-    const db = getDatabase();
+  const db = getDatabase();
     
     if (!db.navigation || !Array.isArray(db.navigation)) {
       return res.json({
@@ -701,22 +912,22 @@ app.get('/api/child-navs', (req, res) => {
       });
     }
     
-    let allChildren = [];
-    
-    db.navigation.forEach(parent => {
+  let allChildren = [];
+  
+  db.navigation.forEach(parent => {
       if (parent.children && Array.isArray(parent.children)) {
-        allChildren = [...allChildren, ...parent.children.map(child => ({
-          ...child,
-          parentId: parent.id
-        }))];
+    allChildren = [...allChildren, ...parent.children.map(child => ({
+      ...child,
+      parentId: parent.id
+    }))];
       }
-    });
-    
-    res.json({
-      statusCode: 200,
-      message: 'Success',
-      data: allChildren
-    });
+  });
+  
+  res.json({
+    statusCode: 200,
+    message: 'Success',
+    data: allChildren
+  });
   } catch (error) {
     console.error('Error fetching child navs:', error);
     res.status(500).json({
@@ -816,7 +1027,7 @@ app.get('/api/users', (req, res) => {
 // API endpoint cho products
 app.get('/api/products', (req, res) => {
   try {
-    console.log('GET /api/products - Getting all products');
+  console.log('GET /api/products - Getting all products');
     
     // Set CORS headers explicitly for this endpoint
     res.header('Access-Control-Allow-Origin', '*');
@@ -829,7 +1040,7 @@ app.get('/api/products', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Define default products
     const defaultProducts = [
@@ -919,7 +1130,7 @@ app.get('/api/products', (req, res) => {
     }
     
     res.json({
-      statusCode: 200,
+    statusCode: 200,
       message: 'Success',
       data: filteredProducts
     });
@@ -1258,7 +1469,7 @@ app.get('/api/services', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Define default services
     const defaultServices = [
@@ -1319,9 +1530,9 @@ app.get('/api/services', (req, res) => {
       }));
     }
     
-    res.json({
-      statusCode: 200,
-      message: 'Success',
+  res.json({
+    statusCode: 200,
+    message: 'Success',
       data: services
     });
   } catch (error) {
@@ -1546,7 +1757,7 @@ app.get('/api/experiences', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Ensure experiences array exists and is valid
     let experiences = [];
@@ -1573,9 +1784,9 @@ app.get('/api/experiences', (req, res) => {
       console.log('Experiences array not found or not an array, returning default experiences');
     }
     
-    res.json({
-      statusCode: 200,
-      message: 'Success',
+  res.json({
+    statusCode: 200,
+    message: 'Success',
       data: experiences
     });
   } catch (error) {
@@ -1682,7 +1893,7 @@ app.get('/api/news', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Ensure news array exists and is valid
     let news = [];
@@ -1707,9 +1918,9 @@ app.get('/api/news', (req, res) => {
       console.log('News array not found or not an array, returning default news');
     }
     
-    res.json({
-      statusCode: 200,
-      message: 'Success',
+  res.json({
+    statusCode: 200,
+    message: 'Success',
       data: news
     });
   } catch (error) {
@@ -1745,7 +1956,7 @@ app.get('/api/team', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Cache-Control', 'no-store, no-cache, must-revalidate');
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Ensure the team array exists and is valid
     const defaultTeam = [
@@ -1807,7 +2018,7 @@ app.get('/api/teams', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Always provide default team members
     const defaultTeam = [
@@ -1847,10 +2058,10 @@ app.get('/api/teams', (req, res) => {
       createdAt: member.createdAt || new Date().toISOString(),
       updatedAt: member.updatedAt || new Date().toISOString()
     }));
-    
-    res.json({
-      statusCode: 200,
-      message: 'Success',
+  
+  res.json({
+    statusCode: 200,
+    message: 'Success',
       data: validTeams
     });
   } catch (error) {
@@ -1902,7 +2113,7 @@ app.get('/api/teams/:id', (req, res) => {
       return res.status(200).end();
     }
     
-    const db = getDatabase();
+  const db = getDatabase();
     
     // Default member data to use if not found
     const defaultMember = {
@@ -1928,12 +2139,12 @@ app.get('/api/teams/:id', (req, res) => {
     const member = db.team.find(member => member.id === teamId);
     
     if (member) {
-      res.json({
-        statusCode: 200,
-        message: 'Success',
+    res.json({
+      statusCode: 200,
+      message: 'Success',
         data: member
-      });
-    } else {
+    });
+  } else {
       // Return default data instead of 404
       res.json({
         statusCode: 200,
