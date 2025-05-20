@@ -5,17 +5,17 @@ const app = express();
 
 // Enable CORS with specific origin
 app.use(cors({
-  origin: 'https://thontrangliennhat.com',
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: 'X-Requested-With, Content-Type, Accept',
+  allowedHeaders: 'X-Requested-With, Content-Type, Accept, Authorization',
   credentials: true
 }));
 
 // Add CORS headers to all responses
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://thontrangliennhat.com');
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle preflight requests
