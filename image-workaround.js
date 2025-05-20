@@ -30,6 +30,23 @@ const problematicImages = [
   '/image1.815fad67c6559892f81.jpg'
 ];
 
+// New problematic paths from the latest screenshots
+const newProblematicImages = [
+  // New problematic paths with 1747711777614 timestamps
+  '/images/1747711777614-639500359.jpg',
+  '/images/1747711777614-118603841.jpg',
+  '/images/1747711777614-970349078.jpg',
+  // Additional images from second screenshot
+  '/images/1747711783388-639500359.jpg',
+  '/images/1747711783397-639500359.jpg',
+  '/images/1747711783388-118603841.jpg',
+  '/images/1747711783388-970349078.jpg',
+  '/image3.01bcd0e694af190a8c53.jpg'
+];
+
+// Combine all problematic images
+const allProblematicImages = [...problematicImages, ...newProblematicImages];
+
 // Set CORS headers for all responses
 imageWorkaroundRouter.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -44,7 +61,7 @@ imageWorkaroundRouter.use((req, res, next) => {
 });
 
 // Set up direct handlers for all problematic images
-problematicImages.forEach(imagePath => {
+allProblematicImages.forEach(imagePath => {
   // Remove leading slash
   const imageName = imagePath.replace(/^\//, '');
   
@@ -82,6 +99,45 @@ problematicImages.forEach(imagePath => {
   });
 });
 
+// Handle all API requests with timestamps in the URL
+imageWorkaroundRouter.get(/\/(api|images|uploads)\/.*\d{13}.*/, (req, res, next) => {
+  console.log(`Timestamp-based URL detected: ${req.path}`);
+  
+  // If this is an API request, let it pass through
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // For images, serve a placeholder
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Cache-Control', 'public, max-age=86400');
+  res.type('image/png');
+  res.send(createPlaceholderImage());
+});
+
+// Handle specific API endpoints that always fail with CORS errors
+const corsErrorEndpoints = [
+  '/api/parent-navs/slug/san-pham',
+  '/api/parent-navs/slug/dich-vu',
+  '/api/parent-navs/slug/trai-nghiem',
+  '/api/products',
+  '/api/services',
+  '/api/teams',
+  '/api/videos',
+  '/api/all-with-child'
+];
+
+corsErrorEndpoints.forEach(endpoint => {
+  // Handle OPTIONS request for these endpoints
+  imageWorkaroundRouter.options(endpoint, (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Max-Age', '86400');
+    res.status(200).end();
+  });
+});
+
 // Also handle some specific paths that are caught in screenshots
 imageWorkaroundRouter.get('/videos', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -92,13 +148,42 @@ imageWorkaroundRouter.get('/videos', (req, res) => {
   });
 });
 
-imageWorkaroundRouter.get('/localhost:3001/image*', (req, res) => {
+// Generic handler for any image paths with timestamps in them
+imageWorkaroundRouter.get(/\/images\/\d+.*\.jpg/, (req, res) => {
+  console.log(`Generic timestamp image handler: ${req.path}`);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.type('image/jpeg');
+  res.send(createPlaceholderImage());
+});
+
+// Catch all handler for any locahost references
+imageWorkaroundRouter.get(/\/localhost:3001\/.*/, (req, res) => {
+  console.log(`Localhost reference caught: ${req.path}`);
+  res.header('Access-Control-Allow-Origin', '*');
   res.type('image/png');
   res.send(createPlaceholderImage());
 });
 
-imageWorkaroundRouter.get('/localhost:3001/*', (req, res) => {
-  // Handle localhost requests
+// Catch-all handler for any failing images
+imageWorkaroundRouter.get(/\.(jpg|jpeg|png|gif|webp|ico)$/, (req, res, next) => {
+  // Check if the file exists in any of our image directories
+  const filename = path.basename(req.path);
+  const searchPaths = [
+    path.join(__dirname, 'images', filename),
+    path.join(__dirname, 'public', 'images', filename),
+    path.join(__dirname, 'uploads', filename),
+    path.join(__dirname, 'public', 'uploads', filename)
+  ];
+  
+  for (const imagePath of searchPaths) {
+    if (fs.existsSync(imagePath)) {
+      return res.sendFile(imagePath);
+    }
+  }
+  
+  // If we get here, use our placeholder handler
+  console.log(`Catch-all image handler for: ${req.path}`);
+  res.header('Access-Control-Allow-Origin', '*');
   res.type('image/png');
   res.send(createPlaceholderImage());
 });
