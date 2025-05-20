@@ -29,19 +29,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Remove all CORS restrictions completely
+// Remove all CORS restrictions completely and ensure preflight requests work properly
 app.use((req, res, next) => {
+  // Set CORS headers for all types of requests
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', '*');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Max-Age', '86400'); // 24 hours
   
-  // Handle preflight requests immediately
+  // Respond immediately to OPTIONS requests (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
   
+  // For all other requests, proceed
   next();
 });
 

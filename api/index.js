@@ -3,29 +3,20 @@ const express = require('express');
 const cors = require('cors');
 const router = express.Router();
 const { ERROR_TYPES } = require('../error-middleware');
+const { corsMiddleware, xhrCorsHandler, specificPathCorsHandler } = require('../cors-middleware');
 
-// Enable CORS with specific origin
+// Apply our custom CORS middleware
+router.use(corsMiddleware);
+router.use(xhrCorsHandler);
+router.use(specificPathCorsHandler);
+
+// Enable CORS with all origins as a fallback
 router.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: 'X-Requested-With, Content-Type, Accept, Authorization',
   credentials: true
 }));
-
-// Add CORS headers to all responses
-router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
 
 // Mock data tailored to match frontend expectations
 const mockData = {
@@ -246,7 +237,7 @@ const mockData = {
 };
 
 // API endpoints handler with appropriate response format and error handling
-const handleApiResponse = (res, data) => {
+const handleApiResponse = (res, data, next) => {
   try {
     res.json({
       statusCode: 200,
